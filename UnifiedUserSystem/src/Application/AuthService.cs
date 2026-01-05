@@ -40,10 +40,15 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Application
             var now = DateTimeOffset.UtcNow;
 
             var user = User.CreateNew(email, username, fullName, hash, now, actorUserId: null);
+            user.AssignRole(roleId: 1, now, actorUserId: user.Id);
             _unitOfWork.Users.Add(user);
             await _unitOfWork.SaveChangesAsync();
+            var roles = user.UserRoles
+                .Select(x => x.Role?.Name ?? "user")
+                .Distinct()
+                .ToArray();
             var accessToken = _jwt.CreateAccessToken(user);
-            return new AuthResponse(user.Id, user.Email, user.Username, user.Fullname, user.Role, accessToken);
+            return new AuthResponse(user.Id, user.Email, user.Username, user.Fullname, roles, accessToken);
 
         }
         public async Task<AuthResponse?> LoginAsync(LoginRequest req) 
@@ -58,8 +63,8 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Application
                 return null;
 
             var accessToken = _jwt.CreateAccessToken(user);
-
-            return new AuthResponse(user.Id, user.Email, user.Username, user.Fullname, user.Role, accessToken);
+            var roles = user.UserRoles.Select(x => x.Role.Name).Distinct().ToArray();
+            return new AuthResponse(user.Id, user.Email, user.Username, user.Fullname, roles, accessToken);
         }
     }
 }

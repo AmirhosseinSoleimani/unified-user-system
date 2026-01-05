@@ -23,7 +23,10 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
 
         public Task<User?> FindEmailOrUsernameAsync(string emailOrUsernameLower)
         {
-            return _db.Users.FirstOrDefaultAsync(x => x.Email == emailOrUsernameLower || x.Username.ToLower() == emailOrUsernameLower);
+            return _db.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(x => x.Email == emailOrUsernameLower || x.Username.ToLower() == emailOrUsernameLower);
         }
         public Task<bool> UsernameExistsAsync(string username)
         {

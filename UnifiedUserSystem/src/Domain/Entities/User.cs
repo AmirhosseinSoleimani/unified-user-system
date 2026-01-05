@@ -8,7 +8,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
         public string Username { get; private set; } = default!;
         public string Fullname { get; private set; } = default!;
         public string PasswordHash { get; private set; } = default!;
-        public string Role { get; private set; } = "user";
+        public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
         public User() { }
         public static User CreateNew(string email, string username, string fullname, string passwordHash, DateTimeOffset nowUtc, Guid? actorUserId)
         {
@@ -28,10 +28,15 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
                 Username = username,
                 Fullname = fullname,
                 PasswordHash = passwordHash,
-                Role = "user",
             };
             user.SetCreated(nowUtc, actorUserId ?? user.Id);
             return user;
+        }
+        public void AssignRole(int roleId, DateTimeOffset nowUtc, Guid? actorUserId)
+        {
+            if (UserRoles.Any(x => x.RoleId == roleId)) return;
+            UserRoles.Add(UserRole.Create(this.Id, roleId, nowUtc, actorUserId ?? this.Id));
+
         }
         public void ChangeFullName(string newFullName, DateTimeOffset nowUtc, Guid? actorUserId) 
         {

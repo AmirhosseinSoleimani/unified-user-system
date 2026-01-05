@@ -21,9 +21,14 @@ namespace UnifiedUserSystem.src.Infrastructure.Security
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("username", user.Username),
-                new Claim(ClaimTypes.Role, user.Role),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+            foreach (var userRole in user.UserRoles)
+            {
+                var roleName = userRole.Role?.Name ?? "user";
+                if(!string.IsNullOrWhiteSpace(roleName))
+                    claims.Add(new Claim(ClaimTypes.Role, roleName));
+            }
             var keyBytes = Encoding.UTF8.GetBytes(_otp.Key);
             var securityKey = new SymmetricSecurityKey(keyBytes);
             var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);

@@ -7,13 +7,14 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext _db;
-        public UnitOfWork(AppDbContext db, IUserRepository users) 
+        public UnitOfWork(AppDbContext db, IUserRepository users, IRoleRepository roles) 
         {
             _db = db;
             Users = users;
-
+            Roles = roles;
         }
         public IUserRepository Users { get; }
+        public IRoleRepository Roles { get; }
         public Task<int> SaveChangesAsync() => _db.SaveChangesAsync();
     }
 }

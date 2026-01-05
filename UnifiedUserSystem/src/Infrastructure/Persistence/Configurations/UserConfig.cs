@@ -36,12 +36,6 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
             .HasMaxLength(72)
             .IsRequired();
 
-            builder.Property(x => x.Role)
-            .HasColumnName("role")
-            .HasMaxLength(20)
-            .IsRequired()
-            .HasDefaultValue("user");
-
             base.Configure(builder);
         }
     }

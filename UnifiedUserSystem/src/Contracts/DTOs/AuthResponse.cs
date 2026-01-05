@@ -6,7 +6,7 @@
         string Email,
         string Username,
         string Fullname,
-        string Role,
+        string[] Roles,
         string AccessToken
     );
 }
