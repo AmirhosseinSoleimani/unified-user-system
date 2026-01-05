@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using UnifiedUserSystem.src.Contracts.DTOs;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
-using UnifiedUserSystem.src.UnifiedUserSystem.Contracts.DTOs;
 
 namespace UnifiedUserSystem.src.Api.Controllers
 {
+    [ApiController]
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;
@@ -11,6 +13,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         { 
             _auth = auth;
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req) 
         {

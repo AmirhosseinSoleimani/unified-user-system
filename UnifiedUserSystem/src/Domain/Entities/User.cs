@@ -1,19 +1,16 @@
-﻿using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Common;
+﻿using UnifiedUserSystem.src.Domain.Common;
 
 namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
 {
-    public class User
+    public class User : AuditableEntity<Guid>
     {
-        public Guid Id { get; private set; }
         public string Email { get; private set; } = default!;
         public string Username { get; private set; } = default!;
         public string Fullname { get; private set; } = default!;
         public string PasswordHash { get; private set; } = default!;
-        public DateTimeOffset? CreatedAt { get; private set; }
-        public DateTimeOffset? UpdatedAt { get; private set; }
         public string Role { get; private set; } = "user";
         public User() { }
-        public static User CreateNew(string email, string username, string fullname, string passwordHash, DateTimeOffset nowUtc)
+        public static User CreateNew(string email, string username, string fullname, string passwordHash, DateTimeOffset nowUtc, Guid? actorUserId)
         {
             email = NormalizeEmail(email);
             username = NormalizeUsername(username);
@@ -24,7 +21,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
             if (string.IsNullOrWhiteSpace(fullname)) throw new ArgumentException("FullName is required.");
             if (string.IsNullOrWhiteSpace(passwordHash)) throw new ArgumentException("PasswordHash is required.");
 
-            return new User
+            var user =  new User
             {
                 Id = Guid.NewGuid(),
                 Email = email,
@@ -32,21 +29,17 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
                 Fullname = fullname,
                 PasswordHash = passwordHash,
                 Role = "user",
-                CreatedAt = nowUtc,
-                UpdatedAt = nowUtc
             };
+            user.SetCreated(nowUtc, actorUserId ?? user.Id);
+            return user;
         }
-        public void ChangeFullName(string newFullName, DateTimeOffset nowUtc) 
+        public void ChangeFullName(string newFullName, DateTimeOffset nowUtc, Guid? actorUserId) 
         {
             newFullName = NormalizeFullname(newFullName);
             if (string.IsNullOrWhiteSpace(newFullName))
                 throw new ArgumentException("FullName is required.");
             Fullname = newFullName;
-            Touch(nowUtc);
-        }
-        public void Touch(DateTimeOffset nowUtc)
-        {
-            UpdatedAt = nowUtc;
+            Touch(nowUtc, actorUserId);
         }
         public static string NormalizeUsername(string username)
         => (username ?? "").Trim();
