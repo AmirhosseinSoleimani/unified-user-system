@@ -1,10 +1,27 @@
-﻿//namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
-//{
-//    public class RoleOperation
-//    {
-//        public int RoleId { get; set; }
-//        public Role Role { get; set; } = default!;
-//        public int OperationId { get; set; }
-//        public Operation Operation { get; set; } = default!;
-//    }
-//}
+﻿using UnifiedUserSystem.src.Domain.Common;
+
+namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
+{
+    public class RoleOperation : AuditableEntity<Guid>
+    {
+        public int RoleId { get; private set; }
+        public Guid OperationId { get; private set; }
+        public Role Role { get; private set; } = default!;
+        public Operation Operation { get; private set; } = default!;
+        private RoleOperation() { }
+        public static RoleOperation Create(int roleId, Guid operationId, DateTimeOffset nowUtc, Guid? actorUserId)
+        {
+            Guard.True(roleId > 0, "RoleId is invalid");
+            Guard.True(operationId != Guid.Empty, "OperationId is invalid.");
+
+            var roleOperation = new RoleOperation
+            {
+                Id = Guid.NewGuid(),
+                RoleId = roleId,
+                OperationId = operationId
+            };
+            roleOperation.SetCreated(nowUtc, actorUserId);
+            return roleOperation;
+        }
+    }
+}

@@ -7,7 +7,7 @@ using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
-namespace UnifiedUserSystem.src.UnifiedUserSystem.Application
+namespace UnifiedUserSystem.src.Application.Services
 {
     public class AuthService : IAuthService
     {

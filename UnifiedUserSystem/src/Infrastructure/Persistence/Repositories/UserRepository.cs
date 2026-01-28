@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
+using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
-namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
+namespace UnifiedUserSystem.src.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {

@@ -1,7 +1,7 @@
 ﻿using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Contracts.DTOs;
 
-namespace UnifiedUserSystem.src.Business
+namespace UnifiedUserSystem.src.Business.validators
 {
     public class UserBusiness : IUserBusiness
     {

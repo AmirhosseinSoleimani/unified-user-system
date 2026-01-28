@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using UnifiedUserSystem.src.Contracts.DTOs;
+using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 
 namespace UnifiedUserSystem.src.Api.Controllers

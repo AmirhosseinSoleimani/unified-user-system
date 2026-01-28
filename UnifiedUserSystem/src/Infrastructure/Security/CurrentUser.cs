@@ -1,6 +1,7 @@
 ﻿
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using UnifiedUserSystem.src.Application.Interfaces;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security
 {
