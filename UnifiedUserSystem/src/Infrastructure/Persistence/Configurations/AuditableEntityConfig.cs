@@ -4,8 +4,9 @@ using UnifiedUserSystem.src.Domain.Common;
 
 namespace UnifiedUserSystem.src.Infrastructure.Persistence.Configurations
 {
-    public abstract class AuditableEntityConfig<TEntity> : IEntityTypeConfiguration<TEntity>
-        where TEntity : class, IAuditableEntity
+    public abstract class AuditableEntityConfig<TEntity, TKey> : IEntityTypeConfiguration<TEntity>
+        where TEntity : AuditableEntity<TKey>
+        where TKey : struct
     {
         public virtual void Configure(EntityTypeBuilder<TEntity> builder)
         {

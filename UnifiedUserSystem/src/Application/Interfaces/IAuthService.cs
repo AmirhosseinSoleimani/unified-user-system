@@ -1,4 +1,4 @@
-﻿using UnifiedUserSystem.src.Contracts.DTOs;
+﻿using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 
 namespace UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces
 {

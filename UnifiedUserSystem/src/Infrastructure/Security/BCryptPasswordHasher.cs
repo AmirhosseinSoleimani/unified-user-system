@@ -5,7 +5,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security
     public class BCryptPasswordHasher : IPasswordHasher
     {
         public string Hash(string password)
-            => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 8);
+            => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 10);
 
 
         public bool Verify(string password, string passwordHasd)

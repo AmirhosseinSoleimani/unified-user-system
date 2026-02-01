@@ -1,22 +1,41 @@
-﻿//using Microsoft.EntityFrameworkCore;
-//using Microsoft.EntityFrameworkCore.Metadata.Builders;
-//using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Configurations;
+using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
 
-//namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Configurations
-//{
-//    public class RoleOperationConfig : IEntityTypeConfiguration<RoleOperation>
-//    {
-//        public void Configure(EntityTypeBuilder<RoleOperation> builder)
-//        {
-//            builder.HasKey(x => new { x.RoleId, x.OperationId });
+namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Configurations
+{
+    public class RoleOperationConfig : AuditableEntityConfig<RoleOperation, Guid>
+    {
+        public override void Configure(EntityTypeBuilder<RoleOperation> builder)
+        {
+            base.Configure(builder);
 
-//            builder.HasOne(x => x.Role)
-//                .WithMany(r => r.RoleOperations)
-//                .HasForeignKey(x => x.OperationId);
+            builder.ToTable("role_operations", "public");
+            builder.HasKey(x => x.Id);
 
-//            builder.HasOne(x => x.Operation)
-//                .WithMany(o => o.RoleOperations)
-//                .HasForeignKey(x => x.OperationId);
-//        }
-//    }
-//}
+            builder.Property(x => x.Id)
+                .HasColumnName("id");
+
+            builder.Property(x => x.RoleId)
+                .HasColumnName("role_id")
+                .IsRequired();
+
+            builder.Property(x => x.OperationId)
+                .HasColumnName("operation_id")
+                .IsRequired();
+
+            builder.HasOne(x => x.Role)
+                .WithMany(r => r.RoleOperations)
+                .HasForeignKey(x => x.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.Operation)
+                .WithMany(o => o.RoleOperations)
+                .HasForeignKey(x => x.OperationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(x => new { x.RoleId, x.OperationId }).IsUnique();
+        }
+    }
+}

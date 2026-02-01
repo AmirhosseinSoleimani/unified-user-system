@@ -6,5 +6,7 @@ namespace UnifiedUserSystem.src.Application.Interfaces
     {
         Task<bool> ExistsAsync(int roleId, Guid operationId);
         Task AddAsync(RoleOperation roleOperation, CancellationToken cancellationToken = default);
+        Task<RoleOperation?> FindAsync (int roleId, Guid operationId, CancellationToken cancellationToken = default);
+        void Remove(RoleOperation roleOperation);
     }
 }

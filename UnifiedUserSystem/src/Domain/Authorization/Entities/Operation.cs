@@ -15,14 +15,15 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
         {
             key = NormalizeKey(key);
             title = NormalizeTitle(title);
-            if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Operation key is required.");
-            if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Operation title is required.");
+            ValidateKey(key);
+            ValidateTitle(title);
 
             var op = new Operation 
             {
                 Id = Guid.NewGuid(),
                 Key = key,
                 Title = title,
+                IsActive = true,
             };
             op.SetCreated(nowUtc, actoractorUserId);
             return op;
@@ -30,7 +31,30 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
         public void RenameTitle(string newTitle, DateTimeOffset nowUtc, Guid? actorUserId)
         {
             newTitle = NormalizeKey(newTitle);
-            ValidateTitle();
+            ValidateTitle(newTitle);
+            if (Title == newTitle) return;
+            Title = newTitle;
+            Touch(nowUtc, actorUserId);
+        }
+        public void ChangeKey(string newKey, DateTimeOffset nowUtc, Guid? actorUserId)
+        {
+            newKey = NormalizeKey(newKey);
+            ValidateKey(newKey);
+            if (Key == newKey) return;
+            Key = newKey;
+            Touch(nowUtc, actorUserId);
+        }
+        public void Deactive(DateTimeOffset nowUtc, Guid? actorUserId)
+        {
+            if (!IsActive) return;
+            IsActive = false;
+            Touch(nowUtc, actorUserId);
+        }
+        public void Active(DateTimeOffset nowUtc, Guid? actorUserId)
+        {
+            if (IsActive) return;
+            IsActive = true;
+            Touch(nowUtc, actorUserId);
         }
         public static string NormalizeKey(string key)
         => (key ?? "").Trim().ToLowerInvariant();
@@ -38,10 +62,8 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
         => (title ?? "").Trim();
         private static void ValidateKey(string key)
         {
-            if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentException("Operation key is required.");
-            if (key.Length > KeyMaxLength)
-                throw new ArgumentException($"Operation key max length is {KeyMaxLength}.");
+            Guard.NotEmpty(key, nameof(key));
+            Guard.MaxLen(key, KeyMaxLength, nameof(key));
             for(int i = 0; i < key.Length; i++)
             {
                 var ch = key[i];
@@ -52,6 +74,11 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
                 if (!ok)
                     throw new ArgumentException("Operation key contains invalid characters.");
             }
+        }
+        private static void ValidateTitle(string title)
+        {
+            Guard.NotEmpty(title, nameof(title));
+            Guard.MaxLen(title, TitleMaxLength, nameof(title));
         }
     }
 }

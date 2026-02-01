@@ -2,5 +2,6 @@
 {
     public interface IPasswordPolicy
     {
+        void Validate(string password);
     }
 }

@@ -2,5 +2,6 @@
 {
     public class ChangeOperationKeyRequest
     {
+        public string NewKey { get; set; } = default!;
     }
 }

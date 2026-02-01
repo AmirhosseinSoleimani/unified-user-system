@@ -17,33 +17,16 @@ namespace UnifiedUserSystem.src.Api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req) 
         {
-            try 
-            {
-                return Ok(await _auth.RegisterAsync(req));
-            }
-            catch (ArgumentException ex)
-            { 
-                return BadRequest(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var res = await _auth.RegisterAsync(req);
+            return Ok(res);
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            try
-            {
-                var res = await _auth.LoginAsync(req);
-                if (res is null) return Unauthorized();
-                return Ok(res);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var res = await _auth.LoginAsync(req);
+            if (res is null) return Unauthorized();
+            return Ok(res);
         }
     }
 

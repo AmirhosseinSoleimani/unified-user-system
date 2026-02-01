@@ -2,5 +2,6 @@
 {
     public class RenameRoleRequest
     {
+        public string NewName { get; set; } = default!;
     }
 }

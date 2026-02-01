@@ -18,26 +18,26 @@ namespace UnifiedUserSystem.src.Infrastructure.Security
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("username", user.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new (JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new (JwtRegisteredClaimNames.Email, user.Email),
+                new ("username", user.Username),
+                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
             foreach (var userRole in user.UserRoles)
             {
-                var roleName = userRole.Role?.Name ?? "user";
+                var roleName = userRole.Role?.Name;
                 if(!string.IsNullOrWhiteSpace(roleName))
                     claims.Add(new Claim(ClaimTypes.Role, roleName));
             }
             var keyBytes = Encoding.UTF8.GetBytes(_otp.Key);
             var securityKey = new SymmetricSecurityKey(keyBytes);
             var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddMinutes(_otp.ExpiresMinutes);
+
             var token = new JwtSecurityToken(
                 issuer: _otp.Issuer,
                 audience: _otp.Audience,
                 claims: claims,
-                expires: expires,
+                expires: DateTime.UtcNow.AddMinutes(_otp.ExpiresMinutes),
                 signingCredentials: creds
             );
             return new JwtSecurityTokenHandler().WriteToken(token);

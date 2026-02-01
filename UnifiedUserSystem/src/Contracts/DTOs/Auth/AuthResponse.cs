@@ -1,4 +1,4 @@
-﻿namespace UnifiedUserSystem.src.Contracts.DTOs
+﻿namespace UnifiedUserSystem.src.Contracts.DTOs.Auth
 {
     public record AuthResponse
     (

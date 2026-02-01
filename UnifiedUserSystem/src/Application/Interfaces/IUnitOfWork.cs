@@ -6,6 +6,8 @@ namespace UnifiedUserSystem.src.Application.Interfaces
     {
         IUserRepository Users { get; }
         IRoleRepository Roles { get; }
+        IOperationRepository Operations {  get; }
+        IRoleOperationRepository RoleOperations { get; }
         Task<int> SaveChangesAsync();
     }
 }
