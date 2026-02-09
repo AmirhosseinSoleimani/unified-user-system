@@ -2,5 +2,6 @@
 {
     public class AddToCartRequest
     {
+        public Guid ProductId { get; set; }
     }
 }

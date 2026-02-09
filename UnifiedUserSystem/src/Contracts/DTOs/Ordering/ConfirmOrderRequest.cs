@@ -2,5 +2,6 @@
 {
     public class ConfirmOrderRequest
     {
+        public Guid OrderId { get; set; }
     }
 }

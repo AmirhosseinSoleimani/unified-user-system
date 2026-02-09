@@ -26,9 +26,30 @@ namespace UnifiedUserSystem.src.Application.Services
             _clock = clock;
         }
 
-        public Task<CartResponse> AddToMyCartAsync(Guid productId, CancellationToken cancellationToken = default)
+        public async Task<CartResponse> AddToMyCartAsync(Guid productId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            _orderBusiness.ValidateAddToCart(new AddToCartRequest { ProductId = productId, });
+
+            var userId = _currentUser.UserId;
+            Guard.True(userId is not null, "User is not authenticate");
+
+            var product = await _uow.Products.FindByIdAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Product not found.");
+
+            if(!product.IsActive)
+                throw new InvalidOperationException("Product is not active.");
+
+            var order = await _uow.Orders.FindOpenOrderForUSerAsync(userId.Value, cancellationToken);
+            if (order is null) 
+            {
+                order = Order.CreateForUser(userId.Value, _clock.Utcnow, actorUserId: userId.Value);
+                _uow.Orders.Add(order);
+            }
+
+            order.AddItem(product.Id, product.Price, _clock.Utcnow, actorUserId: userId.Value);
+
+            await _uow.SaveChangesAsync();
+            return ToCartResponse(order);
         }
 
         public async Task<CartResponse> ConfirmMyCartAsync(CancellationToken cancellationToken = default)

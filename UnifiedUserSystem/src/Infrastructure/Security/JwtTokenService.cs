@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
+using UnifiedUserSystem.src.Domain.Identity.Entities;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security
 {

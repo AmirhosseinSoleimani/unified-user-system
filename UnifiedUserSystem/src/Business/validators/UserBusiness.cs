@@ -2,8 +2,8 @@
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 using UnifiedUserSystem.src.Domain.Common;
+using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Security;
-using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
 
 namespace UnifiedUserSystem.src.Business.validators
 {

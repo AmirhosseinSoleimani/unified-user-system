@@ -1,6 +1,6 @@
 ﻿using UnifiedUserSystem.src.Domain.Common;
 
-namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
+namespace UnifiedUserSystem.src.Domain.Identity.Entities
 {
     public class UserRole : AuditableEntity<Guid>
     {

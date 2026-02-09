@@ -1,6 +1,6 @@
 ﻿using UnifiedUserSystem.src.Domain.Common;
 
-namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
+namespace UnifiedUserSystem.src.Domain.Authorization.Entities
 {
     public class Operation : AuditableEntity<Guid>
     {
@@ -68,8 +68,8 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
             {
                 var ch = key[i];
                 var ok =
-                    (ch >= 'a' && ch <= 'z') ||
-                    (ch >= '0' && ch <= '9') ||
+                    ch >= 'a' && ch <= 'z' ||
+                    ch >= '0' && ch <= '9' ||
                     ch == '.' || ch == '-' || ch == '_';
                 if (!ok)
                     throw new ArgumentException("Operation key contains invalid characters.");

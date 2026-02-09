@@ -1,6 +1,7 @@
 ﻿using UnifiedUserSystem.src.Domain.Common;
+using UnifiedUserSystem.src.Domain.Identity.Entities;
 
-namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
+namespace UnifiedUserSystem.src.Domain.Authorization.Entities
 {
     public class RoleOperation : AuditableEntity<Guid>
     {

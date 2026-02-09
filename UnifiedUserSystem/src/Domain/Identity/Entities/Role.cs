@@ -1,7 +1,7 @@
-﻿
+﻿using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Common;
 
-namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
+namespace UnifiedUserSystem.src.Domain.Identity.Entities
 {
     public class Role : AuditableEntity<int>
     {

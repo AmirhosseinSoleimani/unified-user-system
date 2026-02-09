@@ -1,6 +1,8 @@
-﻿using UnifiedUserSystem.src.Domain.Common;
+﻿using UnifiedUserSystem.src.Domain.Catalog.Entities;
+using UnifiedUserSystem.src.Domain.Common;
+using UnifiedUserSystem.src.Domain.Ordering.Entities;
 
-namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
+namespace UnifiedUserSystem.src.Domain.Identity.Entities
 {
     public class User : AuditableEntity<Guid>
     {
@@ -14,6 +16,8 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
         public string PasswordHash { get; private set; } = default!;
         public bool IsActive { get; private set; } = true;
         public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
+        public ICollection<ProductUser> ProductUsers { get; private set; } = new List<ProductUser>();
+        public ICollection<Order> Orders { get; private set; } = new List<Order>();
         public User() { }
         public static User CreateNew(string email, string username, string fullname, string passwordHash, DateTimeOffset nowUtc, Guid? actorUserId)
         {
@@ -77,7 +81,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
         {
             Guard.True(roleId > 0, "RoleId is invalid.");
             if (UserRoles.Any(x => x.RoleId == roleId)) return;
-            UserRoles.Add(UserRole.Create(this.Id, roleId, nowUtc, actorUserId ?? this.Id));
+            UserRoles.Add(UserRole.Create(Id, roleId, nowUtc, actorUserId ?? Id));
             Touch(nowUtc, actorUserId ?? Id);
         }
         public void RemoveRole(int roleId, DateTimeOffset nowUtc, Guid? actorUserId)
@@ -86,7 +90,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities
             var ur = UserRoles.FirstOrDefault(x => x.RoleId == roleId);
             if (ur is null) return;
             UserRoles.Remove(ur);
-            Touch(nowUtc, actorUserId ?? this.Id);
+            Touch(nowUtc, actorUserId ?? Id);
         }
         public static string NormalizeUsername(string username)
         => (username ?? "").Trim();

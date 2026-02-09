@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using UnifiedUserSystem.src.Domain.Common;
+using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Configurations;
-using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
 
 namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Configurations
 {

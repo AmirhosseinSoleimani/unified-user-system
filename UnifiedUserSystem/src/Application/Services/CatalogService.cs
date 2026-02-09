@@ -27,9 +27,25 @@ namespace UnifiedUserSystem.src.Application.Services
                 )).ToList();
         }
 
-        public Task<ProductContentResponse> GetProductContentAsync(Guid productId, CancellationToken cancellationToken = default)
+        public async Task<ProductContentResponse> GetProductContentAsync(Guid productId, CancellationToken cancellationToken = default)
         {
             Guard.True(productId != Guid.Empty, "ProductId is invalid.");
+
+            var userId = _currentUser.UserId;
+            Guard.True(userId is not null, "User is not authenticated.");
+
+            var hasAccess = await _uow.ProductUsers.HasAccessAsync(userId.Value, productId, cancellationToken);
+            if (!hasAccess)
+                throw new DomainException("You don't have access to this product content.");
+
+            var product = await _uow.Products.FindByIdAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Product not found.");
+
+            if (!product.IsActive)
+                throw new InvalidOperationException("Product is not active.");
+
+            return new ProductContentResponse(product.Id, product.Title, product.Content);
+
         }
     }
 }

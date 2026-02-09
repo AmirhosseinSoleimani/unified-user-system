@@ -8,6 +8,9 @@ namespace UnifiedUserSystem.src.Application.Interfaces
         IRoleRepository Roles { get; }
         IOperationRepository Operations {  get; }
         IRoleOperationRepository RoleOperations { get; }
+        IProductRepository Products { get; }
+        IOrderRepository Orders { get; }
+        IProductUserRepository ProductUsers { get; }
         Task<int> SaveChangesAsync();
     }
 }

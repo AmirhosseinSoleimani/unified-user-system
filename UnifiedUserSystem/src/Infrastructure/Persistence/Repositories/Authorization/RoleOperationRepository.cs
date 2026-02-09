@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using UnifiedUserSystem.src.Application.Interfaces;
-using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
+using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
-namespace UnifiedUserSystem.src.Infrastructure.Repositories
+namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
 {
     public class RoleOperationRepository : IRoleOperationRepository
     {

@@ -1,6 +1,6 @@
 ﻿using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;
-using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
 
 namespace UnifiedUserSystem.src.Application.Services
 {

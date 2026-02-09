@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Domain.Authorization.Entities;
+using UnifiedUserSystem.src.Domain.Catalog.Entities;
 using UnifiedUserSystem.src.Domain.Common;
+using UnifiedUserSystem.src.Domain.Identity.Entities;
+using UnifiedUserSystem.src.Domain.Ordering.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;
-using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
 
 namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
 {
@@ -24,6 +27,11 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
         public DbSet<Operation> Operation => Set<Operation>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<RoleOperation> RoleOperations => Set<RoleOperation>();
+        public DbSet<Product> Products => Set<Product>();
+        public DbSet<ProductUser> ProductUsers => Set<ProductUser>();
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

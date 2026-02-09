@@ -1,7 +1,7 @@
 ﻿using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Domain.Common;
+using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;
-using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
 
 namespace UnifiedUserSystem.src.Application.Services
 {

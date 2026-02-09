@@ -1,4 +1,4 @@
-﻿using UnifiedUserSystem.src.UnifiedUserSystem.Domain.Entities;
+﻿using UnifiedUserSystem.src.Domain.Identity.Entities;
 
 namespace UnifiedUserSystem.src.Application.Interfaces
 {

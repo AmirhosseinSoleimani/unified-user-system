@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -13,19 +11,22 @@ using UnifiedUserSystem.src.Application.Services;
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Business.policies;
 using UnifiedUserSystem.src.Business.validators;
+using UnifiedUserSystem.src.Business.Ordering;
+using UnifiedUserSystem.src.Business.Catalog;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
-using UnifiedUserSystem.src.Infrastructure.Repositories;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Security;
 using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// Swagger + JWT
+#region Swagger + JWT
 builder.Services.AddSwaggerGen(c =>
     {
         c.SwaggerDoc("v1", new OpenApiInfo { Title = "UnifiedUserSystem API", Version = "v1" });
@@ -46,19 +47,20 @@ builder.Services.AddSwaggerGen(c =>
             }
         });
     });
+#endregion
 
-// DbContext
+#region Core (HttpContext + Clock + CurrentUser)
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+#endregion
 
-
+#region DbContext
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+#endregion
 
-
-
-// Jwt options
+#region JWT Auth
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 var jwtOpt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 var keyBytes = Encoding.UTF8.GetBytes(jwtOpt.Key);
@@ -80,43 +82,53 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
+#endregion
 
-// Authorization OP:...
+#region Authorization (OP:...)
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, OperationPolicyProvider>();
 builder.Services.AddScoped <IAuthorizationHandler, OperationAuthorizationHandler>();
+#endregion
 
-
-// Business
+#region Business (Validators/Policies)
 builder.Services.AddScoped<IPasswordPolicy, PasswordPolicy>();
 builder.Services.AddScoped<IUserBusiness, UserBusiness>();
+builder.Services.AddScoped<IProductBusiness, ProductBusiness>();
+builder.Services.AddScoped<IOrderBusiness, OrderBusiness>();
+#endregion
 
-// Repositories + Uow
+#region Repositories + UnitOfWordk
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IOperationRepository, OperationRepository>();
 builder.Services.AddScoped<IRoleOperationRepository, RoleOperationRepository>();
 
-//builder.Services.AddScoped<IProductRepository, ProductRepository>();
-//builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-//builder.Services.AddScoped<IProductUserRepository, ProductUserRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IProductUserRepository, ProductUserRepository>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+#endregion
 
-// Security helpers
+#region Security helpers
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+#endregion
 
-// Aplication services
+#region Aplication services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+#endregion
 
-// Middleware
+
+#region Middleware
 builder.Services.AddScoped<ExceptionHandlingMiddleware>();
-
+#endregion
 
 var app = builder.Build();
 

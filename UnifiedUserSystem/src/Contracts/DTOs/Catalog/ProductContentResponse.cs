@@ -1,6 +1,8 @@
 ﻿namespace UnifiedUserSystem.src.Contracts.DTOs.Catalog
 {
-    public class ProductContentResponse
-    {
-    }
+    public sealed record ProductContentResponse(
+        Guid Id,
+        string Title,
+        string Content
+    );
 }
