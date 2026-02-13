@@ -29,6 +29,7 @@ builder.Services.AddControllers();
 #region Swagger + JWT
 builder.Services.AddSwaggerGen(c =>
     {
+        c.CustomSchemaIds(t => t.FullName);
         c.SwaggerDoc("v1", new OpenApiInfo { Title = "UnifiedUserSystem API", Version = "v1" });
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme 
         {

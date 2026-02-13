@@ -31,6 +31,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return Ok(res);
         }
 
+        [HttpPost("confirm")]
         public async Task<ActionResult<CartResponse>> Confirm(CancellationToken cancellationToken = default)
         {
             var res = await _orders.ConfirmMyCartAsync(cancellationToken);

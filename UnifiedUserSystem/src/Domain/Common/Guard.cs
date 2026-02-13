@@ -18,6 +18,16 @@
             if (value.Length > max)
                 throw new DomainException($"{name} max length is {max}.");
         }
+        public static void MinLen(string value, int min, string name)
+        {
+            if (value.Length < min)
+                throw new DomainException($"{name} min length is {min}");
+        }
+        public static void AllowedLen(string value, int max, int min, string name)
+        {
+            if (value.Length > max || value.Length < min)
+                throw new DomainException($"{name} must be between {min} and {max} characters.");
+        }
         public static void True(bool condition, string message)
         {
             if (!condition) throw new DomainException(message);
