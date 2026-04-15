@@ -34,6 +34,6 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
         public IProductRepository Products { get; }
         public IOrderRepository Orders { get; }
         public IProductUserRepository ProductUsers { get; }
-        public Task<int> SaveChangesAsync() => _db.SaveChangesAsync();
+        public Task<int> SaveChangesAsync(CancellationToken ct = default) => _db.SaveChangesAsync();
     }
 }

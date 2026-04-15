@@ -4,7 +4,7 @@ using Xunit;
 
 namespace UnifiedUserSystem.tests.UnifiedUserSystem.UnitTests.Domain.Register
 {
-    public class UserRegisterDomainTests
+    public class UserTests
     {
 
         private static DateTimeOffset Now() => DateTimeOffset.Now;

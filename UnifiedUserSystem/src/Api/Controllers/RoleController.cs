@@ -17,7 +17,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:role.create")]
-        [HttpGet]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateRoleRequest req)
         {
             var role = await _roles.CreateRoleAsync(req.Name);

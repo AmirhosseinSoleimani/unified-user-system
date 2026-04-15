@@ -7,7 +7,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces
         Task<bool> EmailExistsAsync(string email);
         Task<bool> UsernameExistsAsync(string username);
         Task<User?> FindEmailOrUsernameAsync(string keyLower);
-        Task<User?> FindByIdAsync(Guid id);
+        Task<User?> FindByIdAsync(Guid id, CancellationToken ct = default);
         void Add(User user);
     }
 }

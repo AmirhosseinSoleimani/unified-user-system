@@ -32,8 +32,7 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
                 .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(x => x.Email == keyLower || x.Username.ToLower() == keyLower);
         }
-
-        public Task<User?> FindByIdAsync(Guid id)
+        public Task<User?> FindByIdAsync(Guid id, CancellationToken ct = default)
         {
             return _db.Users
                 .Include(u => u.UserRoles)

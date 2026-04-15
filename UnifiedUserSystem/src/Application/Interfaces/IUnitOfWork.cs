@@ -11,6 +11,6 @@ namespace UnifiedUserSystem.src.Application.Interfaces
         IProductRepository Products { get; }
         IOrderRepository Orders { get; }
         IProductUserRepository ProductUsers { get; }
-        Task<int> SaveChangesAsync();
+        Task<int> SaveChangesAsync(CancellationToken ct = default);
     }
 }

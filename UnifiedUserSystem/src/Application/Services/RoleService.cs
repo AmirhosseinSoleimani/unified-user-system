@@ -18,70 +18,102 @@ namespace UnifiedUserSystem.src.Application.Services
             _currentUser = currentUser;
         }
 
-        public async Task ActivateRoleAsync(int roleId, CancellationToken ct = default)
-        {
-            var role = await _uow.Roles.FindByIdAsync(roleId)
-                ?? throw new InvalidOperationException("Role not found.");
-            role.Active(_clock.Utcnow, _currentUser.UserId);
-            await _uow.SaveChangesAsync();
-        }
-
-        public async Task AssignRoleToUserAsync(Guid userId, int roleId, CancellationToken ct = default)
-        {
-            Guard.True(userId != Guid.Empty, "UserId not found.");
-            var user = await _uow.Users.FindByIdAsync(userId)
-                ?? throw new InvalidOperationException("User not found.");
-
-            var role = await _uow.Users.FindByIdAsync(userId)
-                ?? throw new InvalidOperationException("Role not found.");
-
-            if (!role.IsActive) throw new InvalidOperationException("Role is not active.");
-
-            user.AssignRole(roleId, _clock.Utcnow, _currentUser.UserId);
-            await _uow.SaveChangesAsync();
-        }
-
         public async Task<Role> CreateRoleAsync(string name, CancellationToken ct = default)
         {
-            var normalized = Role.NormalizeName(name);
-            var exists = await _uow.Roles.FindByNameAsync(normalized);
-            if (exists is not null)
-                throw new InvalidOperationException("Rple name already exists.");
-            var role = Role.Create(name, _clock.Utcnow, _currentUser.UserId);
+            var normalizedName = Role.NormalizeName(name);
+
+            var existingByName = await _uow.Roles.FindByNameAsync(normalizedName, ct);
+            if (existingByName is not null)
+                throw new InvalidOperationException("Role name already exists.");
+
+            var baseKey = Role.NormalizeKey(normalizedName);
+            if (string.IsNullOrWhiteSpace(baseKey))
+                throw new InvalidOperationException("Role key cannot be generated from name.");
+
+            var key = await GenerateUniqueKeyAsync(baseKey, ct);
+
+            var role = Role.Create(key, normalizedName, _clock.Utcnow, _currentUser.UserId);
+
             _uow.Roles.Add(role);
-            await _uow.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
+
             return role;
         }
 
         public async Task DeactivateRoleAsync(int roleId, CancellationToken ct = default)
         {
-            var role = await _uow.Roles.FindByIdAsync(roleId)
+            var role = await _uow.Roles.FindByIdAsync(roleId, ct)
                 ?? throw new InvalidOperationException("Role not found.");
-            role.Deactive(_clock.Utcnow, _currentUser.UserId);
-            await _uow.SaveChangesAsync();
+
+            role.Deactivate(_clock.Utcnow, _currentUser.UserId);
+            await _uow.SaveChangesAsync(ct);
+        }
+
+        public async Task ActivateRoleAsync(int roleId, CancellationToken ct = default)
+        {
+            var role = await _uow.Roles.FindByIdAsync(roleId, ct)
+                ?? throw new InvalidOperationException("Role not found.");
+
+            role.Activate(_clock.Utcnow, _currentUser.UserId);
+            await _uow.SaveChangesAsync(ct);
+        }
+
+        public async Task AssignRoleToUserAsync(Guid userId, int roleId, CancellationToken ct = default)
+        {
+            Guard.True(userId != Guid.Empty, "UserId not found.");
+
+            var user = await _uow.Users.FindByIdAsync(userId, ct)
+                ?? throw new InvalidOperationException("User not found.");
+
+            var role = await _uow.Roles.FindByIdAsync(roleId, ct)
+                ?? throw new InvalidOperationException("Role not found.");
+
+            if (!role.IsActive) throw new InvalidOperationException("Role is not active.");
+
+            user.AssignRole(roleId, _clock.Utcnow, _currentUser.UserId);
+            await _uow.SaveChangesAsync(ct);
         }
 
         public async Task RemoveRoleFromUserAsync(Guid userId, int roleId, CancellationToken ct = default)
         {
             Guard.True(userId != Guid.Empty, "UserId is invalid.");
-            var user = await _uow.Users.FindByIdAsync(userId)
+
+            var user = await _uow.Users.FindByIdAsync(userId, ct)
                 ?? throw new InvalidOperationException("User not found.");
 
             user.RemoveRole(roleId, _clock.Utcnow, _currentUser.UserId);
-            await _uow.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
         }
 
         public async Task RenameRoleAsync(int roleId, string newName, CancellationToken ct = default)
         {
-            var role = await _uow.Roles.FindByIdAsync(roleId)
+            var role = await _uow.Roles.FindByIdAsync(roleId, ct)
                 ?? throw new InvalidOperationException("Role not found.");
-            var normalize = Role.NormalizeName(newName);
-            var exists = await _uow.Roles.FindByNameAsync(normalize);
+
+            var normalizedName = Role.NormalizeName(newName);
+
+            var exists = await _uow.Roles.FindByNameAsync(normalizedName, ct);
             if (exists is not null && exists.Id != roleId)
                 throw new InvalidOperationException("Role name already exists.");
 
             role.Rename(newName, _clock.Utcnow, _currentUser.UserId);
-            await _uow.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
+        }
+
+        private async Task<string> GenerateUniqueKeyAsync(string baseKey, CancellationToken ct)
+        {
+            var key = baseKey;
+            var suffix = 2;
+
+            while (await _uow.Roles.ExistsByKeyAsync(key, ct)) 
+            {
+                key = $"{baseKey}-{suffix}";
+                suffix++;
+
+                if (key.Length > Role.KeyMaxLength)
+                    throw new InvalidOperationException("Generated role key is too long.");
+            }
+            return key;
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Linq.Expressions;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Catalog.Entities;
@@ -36,6 +38,19 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+                {
+                    var parameter = Expression.Parameter(entityType.ClrType, "e");
+                    var prop = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
+                    var body = Expression.Equal(prop, Expression.Constant(false));
+                    var lambda = Expression.Lambda(body, parameter);
+
+                    modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+                }
+            }
         }
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -52,16 +67,28 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
             var nowUtc = _clock.Utcnow;
             var actorUserId = _currentUser.UserId;
 
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                if (entry.State != EntityState.Deleted)
+                    continue;
+
+                if (entry.Entity is ISoftDeletable softDeletable)
+                {
+                    entry.State = EntityState.Modified;
+
+                    softDeletable.SoftDelete(nowUtc, actorUserId);
+                }
+            }
             foreach (var entry in ChangeTracker.Entries<IAuditableEntity>())
             {
-               if (entry.State == EntityState.Added)
-               {
+                if (entry.State == EntityState.Added)
+                {
                     entry.Entity.SetCreated(nowUtc, actorUserId);
-               }
-               else if (entry.State == EntityState.Modified)
-               {
+                }
+                else if (entry.State == EntityState.Modified)
+                {
                     entry.Entity.Touch(nowUtc, actorUserId);
-               }
+                }
             }
         }
     }

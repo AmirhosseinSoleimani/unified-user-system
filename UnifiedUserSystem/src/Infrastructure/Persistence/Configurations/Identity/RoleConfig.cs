@@ -16,11 +16,16 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.Id)
-                .HasColumnType("id");
+                .HasColumnName("id");
 
             builder.Property(x => x.Name)
-                .HasColumnType("name")
+                .HasColumnName("name")
                 .HasMaxLength(Role.NameMaxLength)
+                .IsRequired();
+
+            builder.Property(x => x.Key)
+                .HasColumnName("key")
+                .HasMaxLength(Role.KeyMaxLength)
                 .IsRequired();
 
             builder.Property(x => x.IsActive)
@@ -28,6 +33,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
                 .IsRequired();
 
             builder.HasIndex(x => x.Name).IsUnique();
+            builder.HasIndex(x => x.Key).IsUnique();
         }
 
     }
