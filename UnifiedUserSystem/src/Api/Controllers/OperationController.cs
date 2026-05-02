@@ -32,7 +32,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContent();
         }
 
-        [Authorize(Policy = "OP.operation.changeKey")]
+        [Authorize(Policy = "OP:operation.changeKey")]
         [HttpPut("{operationId:guid}/key")]
         public async Task<IActionResult> ChangeKey(Guid operationId, [FromBody] ChangeOperationKeyRequest req)
         {
