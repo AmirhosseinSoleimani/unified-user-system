@@ -5,7 +5,7 @@ namespace UnifiedUserSystem.src.Api.Authorization
 {
     public sealed class OperationPolicyProvider : DefaultAuthorizationPolicyProvider
     {
-        public const string prefix = "OP.";
+        public const string prefix = "OP:";
 
         public OperationPolicyProvider(IOptions<AuthorizationOptions> options) : base(options) { }
 
