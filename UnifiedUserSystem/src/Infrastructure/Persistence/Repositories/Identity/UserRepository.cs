@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
-using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
 namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
@@ -17,27 +17,34 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
             _db.Users.Add(user);
         }
 
-        public Task<bool> EmailExistsAsync(string email)
+        public async Task<bool> EmailExistsAsync(string email)
         {
-            return _db.Users.AnyAsync(x => x.Email == email);
+            return await _db.Users.AnyAsync(x => x.Email == email);
         }
-        public Task<bool> UsernameExistsAsync(string username)
+        public async Task<bool> UsernameExistsAsync(string username)
         {
-            return _db.Users.AnyAsync(x => x.Username == username);
+            return await _db.Users.AnyAsync(x => x.Username == username);
         }
-        public Task<User?> FindEmailOrUsernameAsync(string keyLower)
+        public async Task<User?> FindEmailOrUsernameAsync(string keyLower)
         {
-            return _db.Users
+            return await _db.Users
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(x => x.Email == keyLower || x.Username.ToLower() == keyLower);
         }
-        public Task<User?> FindByIdAsync(Guid id, CancellationToken ct = default)
+        public async Task<User?> FindByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return _db.Users
+            return await _db.Users
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+        }
+        public async Task<User?> FindByIdWithRolesAsync(Guid id, CancellationToken ct = default)
+        {
+            return await _db.Users
+                .Include(x => x.UserRoles)
+                .ThenInclude(x => x.Role)
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
         }
             
     }

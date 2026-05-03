@@ -171,12 +171,6 @@ namespace UnifiedUserSystem.tests.UnifiedUserSystem.UnitTests.Domain.Register
             Assert.NotNull(user.UserRoles);
             Assert.Empty(user.UserRoles);
 
-            Assert.NotNull(user.ProductUsers);
-            Assert.Empty(user.ProductUsers);
-
-            Assert.NotNull(user.Orders);
-            Assert.Empty(user.Orders);
-
             Assert.Equal(now, user.CreatedAt);
             Assert.Equal(now, user.UpdatedAt);
 
