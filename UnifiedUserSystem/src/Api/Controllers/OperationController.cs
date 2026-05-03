@@ -41,7 +41,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:operation.activate")]
-        [HttpPut("{operation:guid}/activate")]
+        [HttpPut("{operationId:guid}/activate")]
         public async Task<IActionResult> Activate(Guid operationId)
         {
             await _ops.ActivateOperatioAsync(operationId);
