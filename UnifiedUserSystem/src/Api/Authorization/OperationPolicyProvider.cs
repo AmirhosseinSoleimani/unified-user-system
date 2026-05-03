@@ -16,6 +16,7 @@ namespace UnifiedUserSystem.src.Api.Authorization
                 var opKey = policyName.Substring(prefix.Length).Trim().ToLowerInvariant();
 
                 var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
                     .AddRequirements(new OperationRequirement(opKey))
                     .Build();
 
