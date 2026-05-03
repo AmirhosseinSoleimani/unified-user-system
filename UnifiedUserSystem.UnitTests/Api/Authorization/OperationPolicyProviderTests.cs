@@ -28,10 +28,15 @@ namespace UnifiedUserSystem.UnitTests.Api.Authorization
             var policy = await sut.GetPolicyAsync("OP:role.create");
 
             policy.Should().NotBeNull();
-            policy!.Requirements.Should().ContainSingle();
 
-            var requirement = policy.Requirements.Single().Should().BeOfType<OperationRequirement>().Subject;
-            requirement.OperationKey.Should().Be("role.create");
+            var operationRequirement = policy!.Requirements
+                .OfType<OperationRequirement>()
+                .Single();
+
+            operationRequirement.OperationKey.Should().Be("role.create");
+
+            policy.Requirements.Should()
+                .Contain(r => r.GetType().Name == "DenyAnonymousAuthorizationRequirement");
         }
 
         [Fact]
