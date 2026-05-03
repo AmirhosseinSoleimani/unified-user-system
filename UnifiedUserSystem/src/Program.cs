@@ -11,8 +11,6 @@ using UnifiedUserSystem.src.Application.Services;
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Business.policies;
 using UnifiedUserSystem.src.Business.validators;
-using UnifiedUserSystem.src.Business.Ordering;
-using UnifiedUserSystem.src.Business.Catalog;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Security;
@@ -20,6 +18,7 @@ using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security;
+using UnifiedUserSystem.src.Application.Interfaces.Identity;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -94,8 +93,6 @@ builder.Services.AddScoped <IAuthorizationHandler, OperationAuthorizationHandler
 #region Business (Validators/Policies)
 builder.Services.AddScoped<IPasswordPolicy, PasswordPolicy>();
 builder.Services.AddScoped<IUserBusiness, UserBusiness>();
-builder.Services.AddScoped<IProductBusiness, ProductBusiness>();
-builder.Services.AddScoped<IOrderBusiness, OrderBusiness>();
 #endregion
 
 #region Repositories + UnitOfWordk
@@ -104,9 +101,6 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IOperationRepository, OperationRepository>();
 builder.Services.AddScoped<IRoleOperationRepository, RoleOperationRepository>();
 
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<IProductUserRepository, ProductUserRepository>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 #endregion
@@ -118,12 +112,10 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 #region Aplication services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
+//builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 
-builder.Services.AddScoped<ICatalogService, CatalogService>();
-builder.Services.AddScoped<IOrderService, OrderService>();
 #endregion
 
 

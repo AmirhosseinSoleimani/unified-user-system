@@ -8,21 +8,21 @@ namespace UnifiedUserSystem.src.Infrastructure.Security
     public class CurrentUser : ICurrentUser
     {
         private readonly IHttpContextAccessor _http;
-        public CurrentUser(IHttpContextAccessor http) 
+        public CurrentUser(IHttpContextAccessor http)
         {
             _http = http;
         }
-        public Guid? UserId 
-        { 
-            get 
+        private ClaimsPrincipal? User => _http.HttpContext?.User;
+        public bool IsAuthenticated => User?.Identity?.IsAuthenticated == true;
+
+        public Guid? UserId
+        {
+            get
             {
-                var user = _http.HttpContext?.User;
+                if (!IsAuthenticated) return null;
 
-                if (user?.Identity?.IsAuthenticated != true) return null;
-
-                var sub = user.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                if (Guid.TryParse(sub, out var id)) return id;
-                return null;
+                var sub = User!.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                return (Guid.TryParse(sub, out var id))? id : null;
             }
         }
     }

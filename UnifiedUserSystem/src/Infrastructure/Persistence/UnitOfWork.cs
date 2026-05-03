@@ -1,5 +1,5 @@
 ﻿using UnifiedUserSystem.src.Application.Interfaces;
-using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
 namespace UnifiedUserSystem.src.Infrastructure.Persistence
@@ -12,10 +12,7 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
             IUserRepository users,
             IRoleRepository roles,
             IOperationRepository operations,
-            IRoleOperationRepository roleOperations,
-            IProductRepository products,
-            IOrderRepository orders,
-            IProductUserRepository productUSers
+            IRoleOperationRepository roleOperations
             )
         {
             _db = db;
@@ -23,17 +20,11 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
             Roles = roles;
             Operations = operations;
             RoleOperations = roleOperations;
-            Products = products;
-            Orders = orders;
-            ProductUsers = productUSers;
         }
         public IUserRepository Users { get; }
         public IRoleRepository Roles { get; }
         public IOperationRepository Operations { get; }
         public IRoleOperationRepository RoleOperations { get; }
-        public IProductRepository Products { get; }
-        public IOrderRepository Orders { get; }
-        public IProductUserRepository ProductUsers { get; }
-        public Task<int> SaveChangesAsync(CancellationToken ct = default) => _db.SaveChangesAsync();
+        public Task<int> SaveChangesAsync(CancellationToken ct = default) => _db.SaveChangesAsync(ct);
     }
 }

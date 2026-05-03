@@ -3,7 +3,7 @@ using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;
 
-namespace UnifiedUserSystem.src.Application.Services
+namespace UnifiedUserSystem.src.Application.Services.Identity
 {
     public class RoleService : IRoleService
     {

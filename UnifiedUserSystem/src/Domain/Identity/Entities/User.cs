@@ -1,8 +1,6 @@
 ﻿using System.Net.Mail;
 using System.Text.RegularExpressions;
-using UnifiedUserSystem.src.Domain.Catalog.Entities;
 using UnifiedUserSystem.src.Domain.Common;
-using UnifiedUserSystem.src.Domain.Ordering.Entities;
 
 namespace UnifiedUserSystem.src.Domain.Identity.Entities
 {
@@ -29,8 +27,6 @@ namespace UnifiedUserSystem.src.Domain.Identity.Entities
         public bool IsActive { get; private set; } = true;
 
         public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
-        public ICollection<ProductUser> ProductUsers { get; private set; } = new List<ProductUser>();
-        public ICollection<Order> Orders { get; private set; } = new List<Order>();
 
         public User() { }
 
