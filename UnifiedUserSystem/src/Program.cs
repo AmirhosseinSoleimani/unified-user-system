@@ -7,7 +7,9 @@ using System.Text;
 using UnifiedUserSystem.src.Api.Authorization;
 using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Services;
+using UnifiedUserSystem.src.Application.Services.Identity;
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Business.policies;
 using UnifiedUserSystem.src.Business.validators;
@@ -18,7 +20,6 @@ using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security;
-using UnifiedUserSystem.src.Application.Interfaces.Identity;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -112,7 +113,8 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 #region Aplication services
 builder.Services.AddScoped<IAuthService, AuthService>();
-//builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 

@@ -16,13 +16,14 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
         }
         public async Task<ProfileResponse> GetMyProfileAsync(CancellationToken ct = default)
         {
-            if (!_currentUser.IsAuthenticated || _currentUser.UserId.HasValue)
+            if (!_currentUser.IsAuthenticated || !_currentUser.UserId.HasValue)
             {
                 throw new UnauthorizedAccessException("User is not authenticated.");
             }
+
             var user = await _unitOfWork.Users.FindByIdWithRolesAsync(_currentUser.UserId.Value, ct);
 
-            if (user is null) 
+            if (user is null)
             {
                 throw new KeyNotFoundException("User not found.");
             }
