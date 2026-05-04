@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
@@ -22,30 +23,17 @@ namespace UnifiedUserSystem.src.Api.Authorization
         {
             if (context.User?.Identity?.IsAuthenticated != true) return;
 
-            var roleNames = context.User.FindAll(ClaimTypes.Role)
-                .Select(x => (x.Value ?? "").Trim().ToLowerInvariant())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct()
-                .ToArray();
+            var sub = context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-            if (roleNames.Length == 0) return;
+            if (!Guid.TryParse(sub, out var userId)) return;
 
-            var opId = await _db.Operation
-                .Where(o => o.IsActive && o.Key == requirement.OperationKey)
-                .Select(o => o.Id)
-                .FirstOrDefaultAsync();
-
-            if(opId == Guid.Empty) return;
-
-            var roleIds = await _db.Roles
-                .Where(r => r.IsActive && roleNames.Contains(r.Name))
-                .Select(r => r.Id)
-                .ToListAsync();
-
-            if (roleIds.Count == 0) return;
-
-            var allowed = await _db.RoleOperations
-                .AnyAsync(ro => roleIds.Contains(ro.RoleId) && ro.OperationId == opId);
+            var allowed = await _db.UserRoles.AnyAsync(ur =>
+                ur.UserId == userId &&
+                ur.User.IsActive &&
+                ur.Role.IsActive &&
+                ur.Role.RoleOperations.Any(ro =>
+                ro.Operation.IsActive && ro.Operation.Key == requirement.OperationKey)
+            );
 
             if (allowed)
                 context.Succeed(requirement);

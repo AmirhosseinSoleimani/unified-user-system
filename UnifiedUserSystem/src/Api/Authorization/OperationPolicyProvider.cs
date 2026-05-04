@@ -5,7 +5,7 @@ namespace UnifiedUserSystem.src.Api.Authorization
 {
     public sealed class OperationPolicyProvider : DefaultAuthorizationPolicyProvider
     {
-        public const string prefix = "OP.";
+        public const string prefix = "OP:";
 
         public OperationPolicyProvider(IOptions<AuthorizationOptions> options) : base(options) { }
 
@@ -16,6 +16,7 @@ namespace UnifiedUserSystem.src.Api.Authorization
                 var opKey = policyName.Substring(prefix.Length).Trim().ToLowerInvariant();
 
                 var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
                     .AddRequirements(new OperationRequirement(opKey))
                     .Build();
 

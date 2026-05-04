@@ -25,13 +25,17 @@ namespace UnifiedUserSystem.src.Api.Middlewares
             {
                 await WriteProblem(context, StatusCodes.Status409Conflict, "Conflic", ex.Message);
             }
+            catch (KeyNotFoundException ex)
+            {
+                await WriteProblem(context, StatusCodes.Status404NotFound, "Not found", ex.Message);
+            }
             catch (ArgumentException ex)
             {
                 await WriteProblem(context, StatusCodes.Status400BadRequest, "Bad request", ex.Message);
             }
             catch (Exception ex)
             {
-                await WriteProblem(context, StatusCodes.Status500InternalServerError, "server error", "Unexpected error.");
+                await WriteProblem(context, StatusCodes.Status500InternalServerError, "server error", $"Unexpected error: {ex.Message}");
             }
         }
 

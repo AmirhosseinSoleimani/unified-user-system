@@ -1,4 +1,4 @@
-﻿using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
+﻿using UnifiedUserSystem.src.Application.Interfaces.Identity;
 
 namespace UnifiedUserSystem.src.Application.Interfaces
 {
@@ -8,9 +8,6 @@ namespace UnifiedUserSystem.src.Application.Interfaces
         IRoleRepository Roles { get; }
         IOperationRepository Operations {  get; }
         IRoleOperationRepository RoleOperations { get; }
-        IProductRepository Products { get; }
-        IOrderRepository Orders { get; }
-        IProductUserRepository ProductUsers { get; }
-        Task<int> SaveChangesAsync();
+        Task<int> SaveChangesAsync(CancellationToken ct = default);
     }
 }
