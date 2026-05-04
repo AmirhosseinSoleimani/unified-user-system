@@ -24,7 +24,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize]
-        [HttpGet("getMyProfile")]
+        [HttpGet("me")]
         [ProducesResponseType(typeof(ApiResponse<ProfileResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
