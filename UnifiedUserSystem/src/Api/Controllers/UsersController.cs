@@ -33,5 +33,17 @@ namespace UnifiedUserSystem.src.Api.Controllers
             var users = await _userQueryService.ListActiveUsersAsync(ct);
             return OkResponse(users);
         }
+
+        [Authorize(Policy = "OP:users.read")]
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<ProfileResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<ProfileResponse>>> GetUserById([FromRoute] Guid id, CancellationToken ct)
+        {
+            var user = await _userQueryService.GetUserByIdAsync(id, ct);
+            return OkResponse(user);
+        }
     }
 }
