@@ -46,6 +46,12 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
                 .ThenInclude(x => x.Role)
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
         }
-            
+        public async Task<IReadOnlyList<User>> ListActiveAsync(CancellationToken ct = default)
+        {
+            return await _db.Users
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.Username)
+                .ToListAsync(ct);
+        }
     }
 }
