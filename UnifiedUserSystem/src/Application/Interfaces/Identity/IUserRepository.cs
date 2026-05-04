@@ -9,6 +9,7 @@ namespace UnifiedUserSystem.src.Application.Interfaces.Identity
         Task<User?> FindEmailOrUsernameAsync(string keyLower);
         Task<User?> FindByIdAsync(Guid id, CancellationToken ct = default);
         Task<User?> FindByIdWithRolesAsync(Guid id, CancellationToken ct = default);
+        Task<IReadOnlyList<User>> ListActiveAsync(CancellationToken ct = default);
         void Add(User user);
     }
 }

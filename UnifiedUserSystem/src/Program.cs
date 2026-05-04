@@ -114,6 +114,7 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 #region Aplication services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
