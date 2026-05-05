@@ -68,6 +68,15 @@ namespace UnifiedUserSystem.src.Domain.Identity.Entities
             PasswordHash = newPasswordHash;
             Touch(nowUtc, actorUserId ?? Id);
         }
+        public void ChangeUsername(string newUsername, DateTimeOffset nowUtc, Guid? actorUserId)
+        {
+            newUsername = EnsureValidUsername(newUsername);
+
+            if (Username == newUsername) return;
+
+            Username = newUsername;
+            Touch(nowUtc, actorUserId ?? Id);
+        }
         public void Deactive(DateTimeOffset nowUtc, Guid? actorUserId)
         {
             if (!IsActive) return;

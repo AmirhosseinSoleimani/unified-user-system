@@ -65,10 +65,11 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
                 .ReturnsAsync(response);
 
             var currentUserMock = new Mock<ICurrentUser>();
+            var userCommandServiceMock = new Mock<IUserCommandService>();
             currentUserMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
             currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
 
-            var sut = new UsersController(userQueryServiceMock.Object, currentUserMock.Object);
+            var sut = new UsersController(userQueryServiceMock.Object, userCommandServiceMock.Object, currentUserMock.Object);
 
             // Act
             var result = await sut.GetUserById(requestedId, ct);
