@@ -62,5 +62,17 @@ namespace UnifiedUserSystem.src.Api.Controllers
             var user = await _userCommandService.UpdateUserAsync(id, req, ct);
             return OkResponse(user);
         }
+
+        [Authorize(Policy = "OP:users.deactivate")]
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> DeactivateUser([FromRoute] Guid id, CancellationToken ct)
+        {
+            await _userCommandService.DeactivateUserAsync(id, ct);
+            return OkMessage("User deactivated successfully.");
+        }
     }
 }
