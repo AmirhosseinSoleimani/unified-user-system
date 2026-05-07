@@ -34,6 +34,18 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             _passwordPolicy = passwordPolicy;
         }
 
+        public async Task DeactivateUserAsync(Guid id, CancellationToken ct = default)
+        {
+            var user = await _unitOfWork.Users.FindByIdAsync(id, ct);
+
+            if (user is null)
+                throw new KeyNotFoundException("User not found.");
+
+            user.Deactive(_clock.Utcnow, _currentUser.UserId);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+        }
+
         public async Task<ProfileResponse> UpdateUserAsync(Guid id, UpdateUserRequest req, CancellationToken ct = default)
         {
             if (req is null)
