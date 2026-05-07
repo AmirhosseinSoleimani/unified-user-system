@@ -20,7 +20,9 @@ using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security;
-
+using UnifiedUserSystem.src.Application.Interfaces.Auditing;
+using UnifiedUserSystem.src.Application.Services.Auditing;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -101,6 +103,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IOperationRepository, OperationRepository>();
 builder.Services.AddScoped<IRoleOperationRepository, RoleOperationRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -116,6 +119,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
+builder.Services.AddScoped<IAuditLogWriter, AuditLogWriter>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();

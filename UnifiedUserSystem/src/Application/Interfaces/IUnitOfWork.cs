@@ -1,4 +1,5 @@
-﻿using UnifiedUserSystem.src.Application.Interfaces.Identity;
+﻿using UnifiedUserSystem.src.Application.Interfaces.Auditing;
+using UnifiedUserSystem.src.Application.Interfaces.Identity;
 
 namespace UnifiedUserSystem.src.Application.Interfaces
 {
@@ -8,6 +9,7 @@ namespace UnifiedUserSystem.src.Application.Interfaces
         IRoleRepository Roles { get; }
         IOperationRepository Operations {  get; }
         IRoleOperationRepository RoleOperations { get; }
+        IAuditLogRepository AuditLogs { get; }
         Task<int> SaveChangesAsync(CancellationToken ct = default);
     }
 }
