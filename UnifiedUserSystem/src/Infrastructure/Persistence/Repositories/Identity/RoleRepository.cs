@@ -23,5 +23,10 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
         public Task<bool> ExistsByKeyAsync(string normalizeKey, CancellationToken ct = default) =>
             _db.Roles.AnyAsync(x => x.Key == normalizeKey, ct);
 
+        public async Task<IReadOnlyList<Role>> ListAsync(CancellationToken ct = default)
+            => await _db.Roles.AsNoTracking().OrderBy(x => x.Name).ToListAsync(ct);
+
+        public Task<bool> HasAssignedUsersAsync(int roleId, CancellationToken ct = default) =>
+            _db.UserRoles.AnyAsync(x => x.RoleId == roleId, ct);
     }
 }

@@ -115,5 +115,52 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             }
             return key;
         }
+
+        public Task<IReadOnlyList<Role>> ListRolesAsync(CancellationToken ct = default)
+        {
+            return _uow.Roles.ListAsync(ct);
+        }
+
+        public async Task<Role?> GetRoleByIdAsync(int roleId, CancellationToken ct = default)
+        {
+            Guard.True(roleId > 0, "RoleId is invalid.");
+            return await _uow.Roles.FindByIdAsync(roleId, ct);
+        }
+
+        public async Task<Role> UpdateRoleAsync(int roleId, string name, CancellationToken ct = default)
+        {
+            Guard.True(roleId > 0, "RoleId is invalid.");
+            if (string.IsNullOrWhiteSpace(name))
+                throw new DomainException("Role name is required.");
+
+            var role = await _uow.Roles.FindByIdAsync(roleId, ct) 
+                ?? throw new KeyNotFoundException("Role not found.");
+
+            var normalizedName = Role.NormalizeName(name);
+            var existingByName = await _uow.Roles.FindByNameAsync(normalizedName, ct);
+
+            if (existingByName is not null && existingByName.Id != roleId)
+                throw new InvalidOperationException("Role name already exists.");
+
+            role.Rename(normalizedName, _clock.Utcnow, _currentUser.UserId);
+            await _uow.SaveChangesAsync(ct);
+
+            return role;
+        }
+
+        public async Task DeleteRoleAsync(int roleId, CancellationToken ct = default)
+        {
+            Guard.True(roleId > 0, "RoleId is invalid.");
+
+            var role = await _uow.Roles.FindByIdAsync(roleId, ct)
+                ?? throw new KeyNotFoundException("Role not found.");
+
+            var hasAssignedUsers = await _uow.Roles.HasAssignedUsersAsync(roleId, ct);
+            if (hasAssignedUsers)
+                throw new InvalidOperationException("Role is assigned to users and cannot be deleted.");
+
+            role.Delete(_clock.Utcnow, _currentUser.UserId);
+            await _uow.SaveChangesAsync(ct);
+        }
     }
 }
