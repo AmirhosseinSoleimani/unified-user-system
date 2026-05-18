@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Auditing;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Contracts.DTOs.Profile;
 using UnifiedUserSystem.src.Contracts.DTOs.Users;
@@ -18,13 +19,15 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
         private readonly ICurrentUser _currentUser;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPasswordPolicy _passwordPolicy;
+        private readonly IAuditLogWriter _auditLogWriter;
 
         public UserCommandService(
             IUnitOfWork unitOfWork,
             IClock clock,
             ICurrentUser currentUser,
             IPasswordHasher passwordHasher,
-            IPasswordPolicy passwordPolicy
+            IPasswordPolicy passwordPolicy,
+            IAuditLogWriter auditLogWriter
             )
         {
             _unitOfWork = unitOfWork;
@@ -32,6 +35,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             _currentUser = currentUser;
             _passwordHasher = passwordHasher;
             _passwordPolicy = passwordPolicy;
+            _auditLogWriter = auditLogWriter;
         }
 
         public async Task DeactivateUserAsync(Guid id, CancellationToken ct = default)
@@ -41,8 +45,30 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             if (user is null)
                 throw new KeyNotFoundException("User not found.");
 
+            var wasActive = user.IsActive;
+
             user.Deactive(_clock.Utcnow, _currentUser.UserId);
             await _unitOfWork.SaveChangesAsync(ct);
+
+            if (wasActive && !user.IsActive)
+            {
+                await _auditLogWriter.WriteAsync(new WriteAuditLogRequest
+                {
+                    ActorUserId = _currentUser.UserId,
+                    TargetUserId = user.Id,
+                    EntityName = nameof(User),
+                    EntityId = user.Id.ToString(),
+                    Action = "UserDeactivated",
+                    OldValues = new Dictionary<string, object?>
+                    {
+                        ["IsActive"] = true
+                    },
+                    NewValues = new Dictionary<string, object?>
+                    {
+                        ["IsActive"] = false
+                    }
+                }, ct);
+            }
 
         }
 
@@ -65,6 +91,10 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             var now = _clock.Utcnow;
             var actorUserId = _currentUser.UserId;
+            var oldValues = new Dictionary<string, object?>();
+            var newValues = new Dictionary<string, object?>();
+            var originalFullname = user.Fullname;
+            var originalUsername = user.Username;
 
             if (hasFullname)
             {
@@ -92,7 +122,41 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 user.ChangePasswordHash(passwordHash, now, actorUserId);
             }
 
+            if (!string.Equals(originalFullname, user.Fullname, StringComparison.Ordinal))
+            {
+                oldValues["Fullname"] = originalFullname;
+                newValues["Fullname"] = user.Fullname;
+            }
+
+            if (!string.Equals(originalUsername, user.Username, StringComparison.Ordinal))
+            {
+                oldValues["Username"] = originalUsername;
+                newValues["Username"] = user.Username;
+            }
+
+            if (hasPassword)
+            {
+                oldValues["PasswordChanged"] = false;
+                newValues["PasswordChanged"] = true;
+            }
+
+
             await _unitOfWork.SaveChangesAsync(ct);
+
+            if (oldValues.Count > 0 || newValues.Count > 0)
+            {
+                await _auditLogWriter.WriteAsync(new WriteAuditLogRequest
+                {
+                    ActorUserId = actorUserId,
+                    TargetUserId = user.Id,
+                    EntityName = nameof(User),
+                    EntityId = user.Id.ToString(),
+                    Action = "UserUpdated",
+                    OldValues = oldValues,
+                    NewValues = newValues
+                }, ct);
+            }
+
 
             var roles = user.UserRoles
                 .Where(x => x.Role != null)
