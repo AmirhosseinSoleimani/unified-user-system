@@ -66,6 +66,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
 
             var userQueryServiceMock = new Mock<IUserQueryService>();
             var userCommandServiceMock = new Mock<IUserCommandService>();
+            var roleServiceMock = new Mock<IRoleService>();
+
             userCommandServiceMock
                 .Setup(x => x.UpdateUserAsync(requestedId, req, ct))
                 .ReturnsAsync(response);
@@ -77,6 +79,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
             var sut = new UsersController(
                 userQueryServiceMock.Object,
                 userCommandServiceMock.Object,
+                roleServiceMock.Object,
                 currentUserMock.Object);
 
             // Act
