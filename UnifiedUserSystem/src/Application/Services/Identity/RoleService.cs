@@ -20,7 +20,13 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
         public async Task<Role> CreateRoleAsync(string name, CancellationToken ct = default)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new DomainException("Role name is required.");
+
             var normalizedName = Role.NormalizeName(name);
+
+            if (string.IsNullOrWhiteSpace(normalizedName))
+                throw new DomainException("Role name is required.");
 
             var existingByName = await _uow.Roles.FindByNameAsync(normalizedName, ct);
             if (existingByName is not null)
@@ -28,7 +34,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             var baseKey = Role.NormalizeKey(normalizedName);
             if (string.IsNullOrWhiteSpace(baseKey))
-                throw new InvalidOperationException("Role key cannot be generated from name.");
+                throw new DomainException("Role name is required.");
 
             var key = await GenerateUniqueKeyAsync(baseKey, ct);
 
@@ -105,7 +111,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             var key = baseKey;
             var suffix = 2;
 
-            while (await _uow.Roles.ExistsByKeyAsync(key, ct)) 
+            while (await _uow.Roles.ExistsByKeyAsync(key, ct))
             {
                 key = $"{baseKey}-{suffix}";
                 suffix++;
@@ -113,6 +119,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 if (key.Length > Role.KeyMaxLength)
                     throw new InvalidOperationException("Generated role key is too long.");
             }
+
             return key;
         }
 
@@ -130,10 +137,11 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
         public async Task<Role> UpdateRoleAsync(int roleId, string name, CancellationToken ct = default)
         {
             Guard.True(roleId > 0, "RoleId is invalid.");
+
             if (string.IsNullOrWhiteSpace(name))
                 throw new DomainException("Role name is required.");
 
-            var role = await _uow.Roles.FindByIdAsync(roleId, ct) 
+            var role = await _uow.Roles.FindByIdAsync(roleId, ct)
                 ?? throw new KeyNotFoundException("Role not found.");
 
             var normalizedName = Role.NormalizeName(name);

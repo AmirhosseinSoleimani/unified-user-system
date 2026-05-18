@@ -35,7 +35,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse<IReadOnlyList<RoleResponse>>(response);
         }
 
-
         [Authorize(Policy = "OP:role.read")]
         [HttpGet("{roleId:int}")]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
@@ -50,8 +49,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(role));
         }
 
-
-
         [Authorize(Policy = "OP:role.create")]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
@@ -59,17 +56,15 @@ namespace UnifiedUserSystem.src.Api.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
-        [HttpPost]
         public async Task<ActionResult<ApiResponse<RoleResponse>>> Create([FromBody] CreateRoleRequest req, CancellationToken ct)
         {
             if (req is null)
                 throw new DomainException("Request is null.");
 
-            var role = await _roles.CreateRoleAsync(req.Name);
+            var role = await _roles.CreateRoleAsync(req.Name, ct);
 
             return OkResponse(ToResponse(role), "Role created successfully.");
         }
-
 
         [Authorize(Policy = "OP:role.update")]
         [HttpPut("{roleId:int}")]
@@ -92,7 +87,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(role), "Role updated successfully.");
         }
 
-
         [Authorize(Policy = "OP:role.rename")]
         [HttpPut("{roleId:int}/rename")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -114,7 +108,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-
         [Authorize(Policy = "OP:role.delete")]
         [HttpDelete("{roleId:int}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -130,7 +123,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkMessage("Role deleted successfully.");
         }
 
-
         [Authorize(Policy = "OP:role.activate")]
         [HttpPut("{roleId:int}/activate")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -144,7 +136,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-
         [Authorize(Policy = "OP:role.deactivate")]
         [HttpPut("{roleId:int}/deactivate")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -157,7 +148,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
             return NoContentResponse();
         }
-
 
         [Authorize(Policy = "OP:role.remove")]
         [HttpPost("remove")]
@@ -176,9 +166,11 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-
         private static RoleResponse ToResponse(Role role)
         {
+            if (role is null)
+                throw new KeyNotFoundException("Role not found.");
+
             return new RoleResponse
             {
                 Id = role.Id,
@@ -187,6 +179,4 @@ namespace UnifiedUserSystem.src.Api.Controllers
             };
         }
     }
-
-
 }
