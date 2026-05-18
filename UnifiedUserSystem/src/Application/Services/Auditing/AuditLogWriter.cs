@@ -12,7 +12,15 @@ namespace UnifiedUserSystem.src.Application.Services.Auditing
         private static readonly HashSet<string> SensitiveKeys = new(StringComparer.OrdinalIgnoreCase)
         {
             "Password",
-            "PasswordHash"
+            "PasswordHash",
+            "Token",
+            "RefreshToken",
+            "AccessToken",
+            "Otp",
+            "Secret",
+            "PrivateKey",
+            "Authorization",
+            "ApiKey"
         };
 
         private readonly IUnitOfWork _unitOfWork;
