@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Domain.Auditing.Entities;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
@@ -27,6 +28,8 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
         public DbSet<Operation> Operation => Set<Operation>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<RoleOperation> RoleOperations => Set<RoleOperation>();
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +48,15 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
                     modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
                 }
             }
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(x => x.EntityName).IsRequired().HasMaxLength(128);
+                entity.Property(x => x.EntityId).IsRequired().HasMaxLength(128);
+                entity.Property(x => x.Action).IsRequired().HasMaxLength(128);
+                entity.Property(x => x.OldValues);
+                entity.Property(x => x.NewValues);
+            });
         }
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
