@@ -17,14 +17,27 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
             _db.Operation.Add(operation);
         }
 
-        public Task<Operation?> FindByIdAsync(Guid id)
+        public async Task<IReadOnlyList<Operation>> ListAsync(CancellationToken ct = default)
         {
-            return _db.Operation.FirstOrDefaultAsync(x => x.Id == id);
+            return await _db.Operation
+                .AsNoTracking()
+                .OrderBy(x => x.Key)
+                .ToListAsync(ct);
         }
 
-        public Task<Operation?> FindByKeyAsync(string keyLower)
+        public Task<Operation?> FindByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return _db.Operation.FirstOrDefaultAsync(x => x.Key == keyLower);
+            return _db.Operation.FirstOrDefaultAsync(x => x.Id == id, ct);
+        }
+
+        public Task<Operation?> FindByKeyAsync(string keyLower, CancellationToken ct = default)
+        {
+            return _db.Operation.FirstOrDefaultAsync(x => x.Key == keyLower, ct);
+        }
+
+        public Task<bool> HasAssignedRolesAsync(Guid operationId, CancellationToken ct = default)
+        {
+            return _db.RoleOperations.AnyAsync(x => x.OperationId == operationId, ct);
         }
     }
 }

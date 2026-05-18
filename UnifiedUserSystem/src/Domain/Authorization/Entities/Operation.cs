@@ -15,6 +15,7 @@ namespace UnifiedUserSystem.src.Domain.Authorization.Entities
         {
             key = NormalizeKey(key);
             title = NormalizeTitle(title);
+
             ValidateKey(key);
             ValidateTitle(title);
 
@@ -56,6 +57,13 @@ namespace UnifiedUserSystem.src.Domain.Authorization.Entities
             IsActive = true;
             Touch(nowUtc, actorUserId);
         }
+
+        public void Delete(DateTimeOffset nowUtc, Guid? actorUserId)
+            => SoftDelete(nowUtc, actorUserId);
+
+        public void UnDelete(DateTimeOffset nowUtc, Guid? actorUserId)
+            => Restore(nowUtc, actorUserId);
+
         public static string NormalizeKey(string key)
         => (key ?? "").Trim().ToLowerInvariant();
         public static string NormalizeTitle(string title)
