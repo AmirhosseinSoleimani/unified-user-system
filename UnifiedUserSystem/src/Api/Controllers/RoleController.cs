@@ -166,6 +166,80 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
+        [Authorize(Policy = "OP:roles.operations.read")]
+        [HttpGet("{roleId:int}/operations")]
+        [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<RoleOperationsResponse>>> GetOperations(
+            [FromRoute] int roleId,
+            CancellationToken ct)
+        {
+            var response = await _roles.GetRoleOperationsAsync(roleId, ct);
+
+            return OkResponse(response);
+        }
+
+        [Authorize(Policy = "OP:roles.operations.assign")]
+        [HttpPost("{roleId:int}/operations")]
+        [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<ApiResponse<RoleOperationsResponse>>> AssignOperation(
+            [FromRoute] int roleId,
+            [FromBody] AssignRoleOperationRequest req,
+            CancellationToken ct)
+        {
+            if (req is null)
+                throw new DomainException("Request is null.");
+
+            var response = await _roles.AssignOperationToRoleAsync(roleId, req.OperationId, ct);
+
+            return OkResponse(response, "Operation assigned successfully.");
+        }
+
+        [Authorize(Policy = "OP:roles.operations.remove")]
+        [HttpDelete("{roleId:int}/operations/{operationId:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<RoleOperationsResponse>>> RemoveOperation(
+            [FromRoute] int roleId,
+            [FromRoute] Guid operationId,
+            CancellationToken ct)
+        {
+            var response = await _roles.RemoveOperationFromRoleAsync(roleId, operationId, ct);
+
+            return OkResponse(response, "Operation removed successfully.");
+        }
+
+        [Authorize(Policy = "OP:roles.operations.replace")]
+        [HttpPut("{roleId:int}/operations")]
+        [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<ApiResponse<RoleOperationsResponse>>> ReplaceOperations(
+            [FromRoute] int roleId,
+            [FromBody] ReplaceRoleOperationsRequest req,
+            CancellationToken ct)
+        {
+            if (req is null)
+                throw new DomainException("Request is null.");
+
+            var response = await _roles.ReplaceRoleOperationsAsync(roleId, req.OperationIds, ct);
+
+            return OkResponse(response, "Role operations replaced successfully.");
+        }
+
         private static RoleResponse ToResponse(Role role)
         {
             if (role is null)
