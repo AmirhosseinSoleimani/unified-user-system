@@ -1,5 +1,7 @@
 ﻿using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Contracts.DTOs.Roles;
 using UnifiedUserSystem.src.Contracts.DTOs.Users;
+using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;
@@ -209,6 +211,98 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             return ToUserRolesResponse(user);
         }
 
+        public async Task<RoleOperationsResponse> GetRoleOperationsAsync(int roleId, CancellationToken ct = default)
+        {
+            var role = await GetRoleOrThrowAsync(roleId, ct);
+            var roleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
+
+            return ToRoleOperationsResponse(role, roleOperations);
+        }
+
+        public async Task<RoleOperationsResponse> AssignOperationToRoleAsync(int roleId, Guid operationId, CancellationToken ct = default)
+        {
+            var role = await GetActiveRoleOrThrowForOperationsAsync(roleId, ct);
+            var operation = await GetActiveOperationOrThrowAsync(operationId, ct);
+
+            var exists = await _uow.RoleOperations.ExistsAsync(role.Id, operation.Id, ct);
+            if (!exists)
+            {
+                var roleOperation = RoleOperation.Create(role.Id, operation.Id, _clock.Utcnow, _currentUser.UserId);
+                await _uow.RoleOperations.AddAsync(roleOperation, ct);
+                await _uow.SaveChangesAsync(ct);
+            }
+
+            var roleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
+            return ToRoleOperationsResponse(role, roleOperations);
+        }
+
+        public async Task<RoleOperationsResponse> RemoveOperationFromRoleAsync(int roleId, Guid operationId, CancellationToken ct = default)
+        {
+            var role = await GetRoleOrThrowAsync(roleId, ct);
+            var operation = await GetOperationOrThrowAsync(operationId, ct);
+
+            var roleOperation = await _uow.RoleOperations.FindAsync(role.Id, operation.Id, ct);
+            if (roleOperation is not null)
+            {
+                _uow.RoleOperations.Remove(roleOperation);
+                await _uow.SaveChangesAsync(ct);
+            }
+
+            var roleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
+            return ToRoleOperationsResponse(role, roleOperations);
+        }
+
+        public async Task<RoleOperationsResponse> ReplaceRoleOperationsAsync(int roleId, IReadOnlyCollection<Guid> operationIds, CancellationToken ct = default)
+        {
+            if (operationIds is null)
+                throw new DomainException("OperationIds is required.");
+
+            if (operationIds.Any(x => x == Guid.Empty))
+                throw new DomainException("OperationId is invalid.");
+
+            var duplicateOperationIds = operationIds
+                .GroupBy(x => x)
+                .Where(x => x.Count() > 1)
+                .Select(x => x.Key)
+                .ToArray();
+
+            if (duplicateOperationIds.Length > 0)
+                throw new DomainException("Duplicate operation ids are not allowed.");
+
+            var role = await GetActiveRoleOrThrowForOperationsAsync(roleId, ct);
+            var requestedOperationIds = operationIds.ToHashSet();
+
+            foreach (var operationId in requestedOperationIds)
+            {
+                await GetActiveOperationOrThrowAsync(operationId, ct);
+            }
+
+            var currentRoleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
+            var currentOperationIds = currentRoleOperations
+                .Select(x => x.OperationId)
+                .ToArray();
+
+            foreach (var roleOperation in currentRoleOperations)
+            {
+                if (!requestedOperationIds.Contains(roleOperation.OperationId))
+                    _uow.RoleOperations.Remove(roleOperation);
+            }
+
+            foreach (var operationId in requestedOperationIds)
+            {
+                if (!currentOperationIds.Contains(operationId))
+                {
+                    var roleOperation = RoleOperation.Create(role.Id, operationId, _clock.Utcnow, _currentUser.UserId);
+                    await _uow.RoleOperations.AddAsync(roleOperation, ct);
+                }
+            }
+
+            await _uow.SaveChangesAsync(ct);
+
+            var updatedRoleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
+            return ToRoleOperationsResponse(role, updatedRoleOperations);
+        }
+
         private async Task<User> GetUserWithRolesOrThrowAsync(Guid userId, CancellationToken ct)
         {
             Guard.True(userId != Guid.Empty, "UserId is invalid.");
@@ -217,15 +311,50 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 ?? throw new KeyNotFoundException("User not found.");
         }
 
+        private async Task<Role> GetRoleOrThrowAsync(int roleId, CancellationToken ct)
+        {
+            Guard.True(roleId > 0, "RoleId is invalid.");
+
+            return await _uow.Roles.FindByIdAsync(roleId, ct)
+                ?? throw new KeyNotFoundException("Role not found.");
+        }
+
         private async Task<Role> GetActiveRoleOrThrowAsync(int roleId, CancellationToken ct)
         {
-            var role = await _uow.Roles.FindByIdAsync(roleId, ct)
-                ?? throw new KeyNotFoundException("Role not found.");
+            var role = await GetRoleOrThrowAsync(roleId, ct);
 
             if (!role.IsActive)
                 throw new InvalidOperationException("Role is not active.");
 
             return role;
+        }
+
+        private async Task<Role> GetActiveRoleOrThrowForOperationsAsync(int roleId, CancellationToken ct)
+        {
+            var role = await GetRoleOrThrowAsync(roleId, ct);
+
+            if (!role.IsActive)
+                throw new InvalidOperationException("Role is not active.");
+
+            return role;
+        }
+
+        private async Task<Operation> GetOperationOrThrowAsync(Guid operationId, CancellationToken ct)
+        {
+            Guard.True(operationId != Guid.Empty, "OperationId is invalid.");
+
+            return await _uow.Operations.FindByIdAsync(operationId, ct)
+                ?? throw new KeyNotFoundException("Operation not found.");
+        }
+
+        private async Task<Operation> GetActiveOperationOrThrowAsync(Guid operationId, CancellationToken ct)
+        {
+            var operation = await GetOperationOrThrowAsync(operationId, ct);
+
+            if (!operation.IsActive)
+                throw new InvalidOperationException("Operation is not active.");
+
+            return operation;
         }
 
         private static UserRolesResponse ToUserRolesResponse(User user)
@@ -248,6 +377,27 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             };
         }
 
+        private static RoleOperationsResponse ToRoleOperationsResponse(Role role, IReadOnlyList<RoleOperation> roleOperations)
+        {
+            var operations = roleOperations
+                .Where(x => x.Operation != null)
+                .OrderBy(x => x.Operation.Key)
+                .Select(x => new RoleOperationItemResponse
+                {
+                    OperationId = x.OperationId,
+                    Key = x.Operation.Key,
+                    Title = x.Operation.Title,
+                    IsActive = x.Operation.IsActive
+                })
+                .ToArray();
+
+            return new RoleOperationsResponse
+            {
+                RoleId = role.Id,
+                Operations = operations
+            };
+        }
+
         private async Task<string> GenerateUniqueKeyAsync(string baseKey, CancellationToken ct)
         {
             var key = baseKey;
@@ -264,6 +414,5 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             return key;
         }
-
     }
 }

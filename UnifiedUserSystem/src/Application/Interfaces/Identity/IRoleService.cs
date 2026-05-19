@@ -1,4 +1,5 @@
-﻿using UnifiedUserSystem.src.Contracts.DTOs.Users;
+﻿using UnifiedUserSystem.src.Contracts.DTOs.Roles;
+using UnifiedUserSystem.src.Contracts.DTOs.Users;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 
 namespace UnifiedUserSystem.src.Application.Interfaces
@@ -17,5 +18,9 @@ namespace UnifiedUserSystem.src.Application.Interfaces
         Task<UserRolesResponse> AssignRoleToUserAsync(Guid userId, int roleId, CancellationToken ct = default);
         Task<UserRolesResponse> RemoveRoleFromUserAsync(Guid userId, int roleId, CancellationToken ct = default);
         Task<UserRolesResponse> ReplaceUserRolesAsync(Guid userId, IReadOnlyCollection<int> roleIds, CancellationToken ct = default);
+        Task<RoleOperationsResponse> GetRoleOperationsAsync(int roleId, CancellationToken ct = default);
+        Task<RoleOperationsResponse> AssignOperationToRoleAsync(int roleId, Guid operationId, CancellationToken ct = default);
+        Task<RoleOperationsResponse> RemoveOperationFromRoleAsync(int roleId, Guid operationId, CancellationToken ct = default);
+        Task<RoleOperationsResponse> ReplaceRoleOperationsAsync(int roleId, IReadOnlyCollection<Guid> operationIds, CancellationToken ct = default);
     }
 }

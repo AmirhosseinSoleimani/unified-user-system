@@ -1,4 +1,6 @@
-﻿using UnifiedUserSystem.src.Domain.Identity.Entities;
+﻿using UnifiedUserSystem.src.Contracts.DTOs.Roles;
+using UnifiedUserSystem.src.Contracts.DTOs.Users;
+using UnifiedUserSystem.src.Domain.Identity.Entities;
 
 namespace UnifiedUserSystem.src.Application.Interfaces
 {
