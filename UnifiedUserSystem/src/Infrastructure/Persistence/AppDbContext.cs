@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;
-using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Domain.Auditing.Entities;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Common;

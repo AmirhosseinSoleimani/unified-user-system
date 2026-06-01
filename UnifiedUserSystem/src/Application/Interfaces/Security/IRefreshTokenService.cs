@@ -1,4 +1,4 @@
-﻿namespace UnifiedUserSystem.src.Infrastructure.Security
+﻿namespace UnifiedUserSystem.src.Application.Interfaces.Security
 {
     public interface IRefreshTokenService
     {

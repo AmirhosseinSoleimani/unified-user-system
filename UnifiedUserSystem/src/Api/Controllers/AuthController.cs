@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Interfaces.Services;
 using UnifiedUserSystem.src.Application.Services;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 using UnifiedUserSystem.src.Domain.Common;
-using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 
 namespace UnifiedUserSystem.src.Api.Controllers
 {
@@ -17,7 +17,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         public AuthController(
             IAuthService authService,
             ICurrentUser currentUser
-            ) : base( currentUser )
+            ) : base(currentUser)
         {
             _authService = authService;
         }
@@ -84,7 +84,14 @@ namespace UnifiedUserSystem.src.Api.Controllers
             [FromBody] LogoutRequest req,
             CancellationToken ct)
         {
-            await _authService.LogoutAsync(req, ct);
+            if (CurrentUserService.UserId is not Guid currentUserId || currentUserId == Guid.Empty)
+                return UnauthorizedResponse();
+
+            var loggedOut = await _authService.LogoutAsync(currentUserId, req, ct);
+
+            if (!loggedOut)
+                return UnauthorizedResponse("Refresh token is invalid.");
+
             return OkMessage("Logged out successfully.");
         }
 
@@ -95,7 +102,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<ApiResponse<object>>> RevokeAllSessions(
-            [FromBody] RevokeAllSessionsRequest req,
             CancellationToken ct)
         {
             if (CurrentUserService.UserId is not Guid currentUserId || currentUserId == Guid.Empty)

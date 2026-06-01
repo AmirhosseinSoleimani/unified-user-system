@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Interfaces.Services;
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
-using UnifiedUserSystem.src.Infrastructure.Security;
 using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security;
@@ -134,10 +135,11 @@ namespace UnifiedUserSystem.src.Application.Services
             var currentSession = await _uow.RefreshTokenSessions.FindByHashAsync(refreshTokenHash, ct);
             if (currentSession is null)
                 return null;
+
             if (currentSession.IsRevoked)
             {
                 currentSession.MarkReuseDetected(now, currentSession.UserId);
-                await RevokeAllActiveSessionsAsync(currentSession.UserId, now, ct);
+                await RevokeAffectedSessionChainAsync(currentSession, now, ct);
                 await _uow.SaveChangesAsync(ct);
                 return null;
             }
@@ -170,22 +172,27 @@ namespace UnifiedUserSystem.src.Application.Services
             return BuildAuthResponse(user, accessToken, newRefreshToken, newSession.ExpiresAtUtc);
         }
 
-        public async Task LogoutAsync(LogoutRequest req, CancellationToken ct = default)
+        public async Task<bool> LogoutAsync(Guid currentUserId, LogoutRequest req, CancellationToken ct = default)
         {
             if (req is null)
                 throw new DomainException("Request is null.");
 
-            if (_currentUser.UserId is not Guid currentUserId || currentUserId == Guid.Empty)
-                return;
+            if (currentUserId == Guid.Empty)
+                return false;
 
             var refreshTokenHash = _refreshTokenService.HashToken(req.RefreshToken);
             var session = await _uow.RefreshTokenSessions.FindByHashAsync(refreshTokenHash, ct);
 
             if (session is null || session.UserId != currentUserId)
-                return;
+                return false;
 
-            session.Revoke(_clock.Utcnow, currentUserId);
+            var now = _clock.Utcnow;
+            if (session.IsExpired(now) || session.IsRevoked)
+                return false;
+
+           session.Revoke(now, currentUserId);
             await _uow.SaveChangesAsync(ct);
+            return true;
         }
 
         public async Task RevokeAllSessionsAsync(Guid userId, CancellationToken ct = default)
@@ -259,6 +266,40 @@ namespace UnifiedUserSystem.src.Application.Services
             foreach (var session in activeSessions)
             {
                 session.Revoke(nowUtc, userId);
+            }
+        }
+
+
+        private async Task RevokeAffectedSessionChainAsync(
+            RefreshTokenSession reusedSession,
+            DateTimeOffset nowUtc,
+            CancellationToken ct)
+        {
+            var userSessions = await _uow.RefreshTokenSessions.ListByUserIdAsync(reusedSession.UserId, ct);
+            var sessionsById = userSessions.ToDictionary(x => x.Id);
+            var sessionsByParentId = userSessions
+                .Where(x => x.ReplacedBySessionId.HasValue)
+                .GroupBy(x => x.ReplacedBySessionId!.Value)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
+            var stack = new Stack<RefreshTokenSession>();
+            stack.Push(reusedSession);
+
+            while (stack.Count > 0)
+            {
+                var session = stack.Pop();
+
+                if (session.IsActive(nowUtc))
+                    session.Revoke(nowUtc, reusedSession.UserId);
+
+                if (!sessionsByParentId.TryGetValue(session.Id, out var children))
+                    continue;
+
+                foreach (var child in children)
+                {
+                    if (sessionsById.ContainsKey(child.Id))
+                        stack.Push(child);
+                }
             }
         }
     }

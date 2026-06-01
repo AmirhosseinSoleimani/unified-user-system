@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Auditing;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Services.Auditing;
 using UnifiedUserSystem.src.Domain.Auditing.Entities;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;

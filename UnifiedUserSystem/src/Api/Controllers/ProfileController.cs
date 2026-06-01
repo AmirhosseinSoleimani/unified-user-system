@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
-using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Profile;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 
 namespace UnifiedUserSystem.src.Api.Controllers
 {

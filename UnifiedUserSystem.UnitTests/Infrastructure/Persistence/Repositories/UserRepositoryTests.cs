@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Time;

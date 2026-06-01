@@ -39,6 +39,8 @@ namespace UnifiedUserSystem.src.Domain.Identity.Entities
             Guid? actorUserId)
         {
             Guard.True(userId != Guid.Empty, "UserId is invalid.");
+            Guard.NotEmpty(refreshTokenHash, nameof(refreshTokenHash));
+            Guard.MaxLen(refreshTokenHash, RefreshTokenHashMaxLength, nameof(refreshTokenHash));
             Guard.True(expiresAtUtc > issuedAtUtc, "ExpiresAtUtc must be after IssuedAtUtc.");
 
             var session = new RefreshTokenSession

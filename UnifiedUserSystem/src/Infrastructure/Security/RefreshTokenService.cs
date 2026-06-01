@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using System.Text;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Domain.Common;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security

@@ -73,6 +73,8 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Configurations.Identi
             builder.HasIndex(x => x.RefreshTokenHash).IsUnique();
             builder.HasIndex(x => x.UserId);
             builder.HasIndex(x => x.ExpiresAtUtc);
+            builder.HasIndex(x => x.RevokedAtUtc);
+            builder.HasIndex(x => x.ReplacedBySessionId);
         }
     }
 }

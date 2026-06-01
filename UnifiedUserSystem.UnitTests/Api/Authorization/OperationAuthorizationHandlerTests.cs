@@ -5,7 +5,7 @@ using Moq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using UnifiedUserSystem.src.Api.Authorization;
-using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;

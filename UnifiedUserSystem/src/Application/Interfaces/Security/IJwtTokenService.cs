@@ -1,6 +1,6 @@
 ﻿using UnifiedUserSystem.src.Domain.Identity.Entities;
 
-namespace UnifiedUserSystem.src.Infrastructure.Security
+namespace UnifiedUserSystem.src.Application.Interfaces.Security
 {
     public interface IJwtTokenService
     {

@@ -20,6 +20,14 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, ct);
         }
 
+        public async Task<IReadOnlyList<RefreshTokenSession>> ListByUserIdAsync(Guid userId, CancellationToken ct = default)
+        {
+            return await _dbContext.RefreshTokenSessions
+                .Where(x => x.UserId == userId)
+                .OrderBy(x => x.IssuedAtUtc)
+                .ToListAsync(ct);
+        }
+
         public async Task<IReadOnlyList<RefreshTokenSession>> ListActiveByUserIdAsync(Guid userId, DateTimeOffset nowUtc, CancellationToken ct = default)
         {
             return await _dbContext.RefreshTokenSessions

@@ -1,4 +1,4 @@
-﻿namespace UnifiedUserSystem.src.Application.Interfaces
+﻿namespace UnifiedUserSystem.src.Application.Interfaces.Services
 {
     public interface IPermissionService
     {

@@ -9,6 +9,8 @@ using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Auditing;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Interfaces.Services;
 using UnifiedUserSystem.src.Application.Services;
 using UnifiedUserSystem.src.Application.Services.Auditing;
 using UnifiedUserSystem.src.Application.Services.Identity;
@@ -34,7 +36,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         c.CustomSchemaIds(t => t.FullName);
         c.SwaggerDoc("v1", new OpenApiInfo { Title = "UnifiedUserSystem API", Version = "v1" });
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme 
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Name = "Authorization",
             Type = SecuritySchemeType.Http,
@@ -93,7 +95,7 @@ builder.Services
 #region Authorization (OP:...)
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, OperationPolicyProvider>();
-builder.Services.AddScoped <IAuthorizationHandler, OperationAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, OperationAuthorizationHandler>();
 #endregion
 
 #region Business (Validators/Policies)
