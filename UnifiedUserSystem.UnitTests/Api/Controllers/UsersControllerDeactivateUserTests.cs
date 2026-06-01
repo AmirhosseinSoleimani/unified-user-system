@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using UnifiedUserSystem.src.Api.Controllers;
+using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 
@@ -49,6 +50,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
 
             var userQueryServiceMock = new Mock<IUserQueryService>();
             var userCommandServiceMock = new Mock<IUserCommandService>();
+            var roleServiceMock = new Mock<IRoleService>();
+
             userCommandServiceMock
                 .Setup(x => x.DeactivateUserAsync(requestedId, ct))
                 .Returns(Task.CompletedTask);
@@ -60,6 +63,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
             var sut = new UsersController(
                 userQueryServiceMock.Object,
                 userCommandServiceMock.Object,
+                roleServiceMock.Object,
                 currentUserMock.Object);
 
             // Act

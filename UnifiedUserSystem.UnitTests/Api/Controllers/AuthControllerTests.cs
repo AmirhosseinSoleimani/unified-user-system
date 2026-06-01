@@ -7,7 +7,6 @@ using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Auth;
-using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 
 namespace UnifiedUserSystem.UnitTests.Api.Controllers
 {
