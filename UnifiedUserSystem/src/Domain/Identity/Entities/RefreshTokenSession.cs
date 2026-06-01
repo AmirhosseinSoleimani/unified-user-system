@@ -78,6 +78,7 @@ namespace UnifiedUserSystem.src.Domain.Identity.Entities
         public void Rotate(Guid replacedBySessionId, DateTimeOffset nowUtc, Guid? actorUserId)
         {
             Guard.True(replacedBySessionId != Guid.Empty, "ReplacedBySessionId is invalid.");
+            Guard.True(ReplacedBySessionId is null, "Refresh token session has already been rotated.");
 
             ReplacedBySessionId = replacedBySessionId;
 

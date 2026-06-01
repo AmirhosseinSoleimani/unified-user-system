@@ -275,13 +275,17 @@ namespace UnifiedUserSystem.src.Application.Services
             DateTimeOffset nowUtc,
             CancellationToken ct)
         {
-            var userSessions = await _uow.RefreshTokenSessions.ListByUserIdAsync(reusedSession.UserId, ct);
-            var sessionsById = userSessions.ToDictionary(x => x.Id);
-            var sessionsByParentId = userSessions
-                .Where(x => x.ReplacedBySessionId.HasValue)
-                .GroupBy(x => x.ReplacedBySessionId!.Value)
-                .ToDictionary(x => x.Key, x => x.ToList());
+            var userSessions = await _uow.RefreshTokenSessions.ListByUserIdAsync(reusedSession.UserId, ct)
+                ?? Array.Empty<RefreshTokenSession>();
 
+            var sessionsById = userSessions
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (!sessionsById.ContainsKey(reusedSession.Id))
+                sessionsById.Add(reusedSession.Id, reusedSession);
+
+            var visitedSessionIds = new HashSet<Guid>();
             var stack = new Stack<RefreshTokenSession>();
             stack.Push(reusedSession);
 
@@ -289,17 +293,17 @@ namespace UnifiedUserSystem.src.Application.Services
             {
                 var session = stack.Pop();
 
+                if (!visitedSessionIds.Add(session.Id))
+                    continue;
+
                 if (session.IsActive(nowUtc))
                     session.Revoke(nowUtc, reusedSession.UserId);
 
-                if (!sessionsByParentId.TryGetValue(session.Id, out var children))
+                if (session.ReplacedBySessionId is not Guid replacementSessionId)
                     continue;
 
-                foreach (var child in children)
-                {
-                    if (sessionsById.ContainsKey(child.Id))
-                        stack.Push(child);
-                }
+                if (sessionsById.TryGetValue(replacementSessionId, out var replacementSession))
+                    stack.Push(replacementSession);
             }
         }
     }

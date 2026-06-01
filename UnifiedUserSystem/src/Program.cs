@@ -72,12 +72,13 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<RefreshTokenOptions>(builder.Configuration.GetSection("RefreshToken"));
 var jwtOpt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 var keyBytes = Encoding.UTF8.GetBytes(jwtOpt.Key);
-
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
+        opt.MapInboundClaims = false;
         opt.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -152,3 +153,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }
