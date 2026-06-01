@@ -7,22 +7,23 @@ using System.Text;
 using UnifiedUserSystem.src.Api.Authorization;
 using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Auditing;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Services;
+using UnifiedUserSystem.src.Application.Services.Auditing;
 using UnifiedUserSystem.src.Application.Services.Identity;
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Business.policies;
 using UnifiedUserSystem.src.Business.validators;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
 using UnifiedUserSystem.src.Infrastructure.Security;
 using UnifiedUserSystem.src.Infrastructure.Time;
+using UnifiedUserSystem.src.Infrastructure.Web;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security;
-using UnifiedUserSystem.src.Application.Interfaces.Auditing;
-using UnifiedUserSystem.src.Application.Services.Auditing;
-using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<IClientContext, ClientContext>();
 #endregion
 
 #region DbContext
@@ -65,6 +67,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 #region JWT Auth
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<RefreshTokenOptions>(builder.Configuration.GetSection("RefreshToken"));
 var jwtOpt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 var keyBytes = Encoding.UTF8.GetBytes(jwtOpt.Key);
 
@@ -104,7 +107,7 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IOperationRepository, OperationRepository>();
 builder.Services.AddScoped<IRoleOperationRepository, RoleOperationRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
-
+builder.Services.AddScoped<IRefreshTokenSessionRepository, RefreshTokenSessionRepository>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 #endregion
@@ -112,6 +115,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 #region Security helpers
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 #endregion
 
 #region Aplication services

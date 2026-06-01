@@ -10,6 +10,7 @@ namespace UnifiedUserSystem.src.Application.Interfaces
         IOperationRepository Operations {  get; }
         IRoleOperationRepository RoleOperations { get; }
         IAuditLogRepository AuditLogs { get; }
+        IRefreshTokenSessionRepository RefreshTokenSessions { get; }
         Task<int> SaveChangesAsync(CancellationToken ct = default);
     }
 }

@@ -27,6 +27,8 @@ namespace UnifiedUserSystem.src.Domain.Identity.Entities
         public bool IsActive { get; private set; } = true;
 
         public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
+        public ICollection<RefreshTokenSession> RefreshTokenSessions { get; private set; } = new List<RefreshTokenSession>();
+
 
         public User() { }
 

@@ -56,6 +56,15 @@ namespace UnifiedUserSystem.src.Api.Controllers
                 ApiResponse<object>.Fail(message));
         }
 
+        protected ActionResult<ApiResponse<T>> UnauthorizedResponse<T>(
+            string message = "Unauthorized.")
+        {
+            return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                ApiResponse<T>.Fail(message));
+        }
+
+
         protected ActionResult<ApiResponse<object>> ForbiddenResponse(
             string message = "Forbidden.")
         {

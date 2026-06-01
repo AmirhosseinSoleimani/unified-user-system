@@ -29,7 +29,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<RoleOperation> RoleOperations => Set<RoleOperation>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-
+        public DbSet<RefreshTokenSession> RefreshTokenSessions => Set<RefreshTokenSession>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -48,6 +48,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
                     modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
                 }
             }
+
             modelBuilder.Entity<AuditLog>(entity =>
             {
                 entity.HasKey(e => e.Id);

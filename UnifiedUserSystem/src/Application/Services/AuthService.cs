@@ -7,7 +7,7 @@ using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Security;
 using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.UnifiedUserSystem.Application.Interfaces;
-using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
+using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security;
 
 namespace UnifiedUserSystem.src.Application.Services
 {
@@ -17,22 +17,32 @@ namespace UnifiedUserSystem.src.Application.Services
         private readonly IPasswordHasher _hasher;
         private readonly IUserBusiness _business;
         private readonly IJwtTokenService _jwt;
+        private readonly IRefreshTokenService _refreshTokenService;
         private readonly IClock _clock;
+        private readonly ICurrentUser _currentUser;
+        private readonly IClientContext _clientContext;
         public AuthService(
             IUnitOfWork uow,
             IPasswordHasher hasher,
             IUserBusiness business,
             IJwtTokenService jwt,
-            IClock clock
+            IRefreshTokenService refreshTokens,
+            IClock clock,
+            ICurrentUser currentUser,
+            IClientContext clientContext
             )
         {
             _uow = uow;
             _hasher = hasher;
             _business = business;
             _jwt = jwt;
+            _refreshTokenService = refreshTokens;
             _clock = clock;
+            _currentUser = currentUser;
+            _clientContext = clientContext;
         }
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest req) 
+
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest req, CancellationToken ct = default)
         {
             _business.ValidateRegister(req);
 
@@ -47,29 +57,38 @@ namespace UnifiedUserSystem.src.Application.Services
                 throw new InvalidOperationException("Username already exists.");
 
             var defaultRoleId = (int)AppRole.User;
-            var role = await _uow.Roles.FindByIdAsync(defaultRoleId)
+            var role = await _uow.Roles.FindByIdAsync(defaultRoleId, ct)
                 ?? throw new InvalidOperationException("Default role not found. Seed roles first.");
 
-            var hash = _hasher.Hash(req.Password);
             var now = _clock.Utcnow;
-
-            var user = User.CreateNew(email, username, fullName, hash, now, actorUserId: null);
-            user.AssignRole(roleId: 1, now, actorUserId: user.Id);
+            var passwordHash = _hasher.Hash(req.Password);
+            
+            var user = User.CreateNew(email, username, fullName, passwordHash, now, actorUserId: null);
+            user.AssignRole(roleId: role.Id, now, actorUserId: user.Id);
 
             _uow.Users.Add(user);
+
+            var refreshToken = _refreshTokenService.GenerateToken();
+            var refreshSession = CreateRefreshTokenSession(
+                user.Id,
+                refreshToken,
+                now,
+                _clientContext.DeviceName,
+                _clientContext.UserAgent,
+                _clientContext.IpAddress,
+                _clientContext.ClientId);
+
+            _uow.RefreshTokenSessions.Add(refreshSession);
+
             await _uow.SaveChangesAsync();
 
-            var roles = user.UserRoles
-                .Select(x => x.Role?.Name ?? "user")
-                .Distinct()
-                .ToArray();
-
             var accessToken = _jwt.CreateAccessToken(user);
-
-            return new AuthResponse(user.Id, user.Email, user.Username, user.Fullname, roles, accessToken);
+            return BuildAuthResponse(user, accessToken, refreshToken, refreshSession.ExpiresAtUtc);
 
         }
-        public async Task<AuthResponse?> LoginAsync(LoginRequest req) 
+
+
+        public async Task<AuthResponse?> LoginAsync(LoginRequest req, CancellationToken ct = default)
         {
             _business.ValidateLogin(req);
 
@@ -77,15 +96,170 @@ namespace UnifiedUserSystem.src.Application.Services
             var user = await _uow.Users.FindEmailOrUsernameAsync(keyLower);
 
             if (user is null) return null;
-            if(!user.IsActive) return null;
+            if (!user.IsActive) return null;
 
             if (!_hasher.Verify(req.Password, user.PasswordHash))
                 return null;
 
-            var roles = user.UserRoles.Select(x => x.Role.Name).Distinct().ToArray();
-            var accessToken = _jwt.CreateAccessToken(user);
 
-            return new AuthResponse(user.Id, user.Email, user.Username, user.Fullname, roles, accessToken);
+            var now = _clock.Utcnow;
+            var refreshToken = _refreshTokenService.GenerateToken();
+            var refreshSession = CreateRefreshTokenSession(
+                user.Id,
+                refreshToken,
+                now,
+                _clientContext.DeviceName,
+                _clientContext.UserAgent,
+                _clientContext.IpAddress,
+                _clientContext.ClientId);
+
+            _uow.RefreshTokenSessions.Add(refreshSession);
+
+
+            await _uow.SaveChangesAsync();
+
+            var accessToken = _jwt.CreateAccessToken(user);
+            return BuildAuthResponse(user, accessToken, refreshToken, refreshSession.ExpiresAtUtc);
+        }
+
+
+        public async Task<AuthResponse?> RefreshAsync(RefreshTokenRequest req, CancellationToken ct = default)
+        {
+            if (req is null)
+                throw new DomainException("Request is null.");
+
+            var now = _clock.Utcnow;
+            var refreshTokenHash = _refreshTokenService.HashToken(req.RefreshToken);
+
+            var currentSession = await _uow.RefreshTokenSessions.FindByHashAsync(refreshTokenHash, ct);
+            if (currentSession is null)
+                return null;
+            if (currentSession.IsRevoked)
+            {
+                currentSession.MarkReuseDetected(now, currentSession.UserId);
+                await RevokeAllActiveSessionsAsync(currentSession.UserId, now, ct);
+                await _uow.SaveChangesAsync(ct);
+                return null;
+            }
+
+            if (currentSession.IsExpired(now))
+                return null;
+
+            var user = await _uow.Users.FindByIdWithRolesAsync(currentSession.UserId, ct);
+            if (user is null || !user.IsActive)
+                return null;
+
+            var newRefreshToken = _refreshTokenService.GenerateToken();
+            var newSession = CreateRefreshTokenSession(
+                user.Id,
+                newRefreshToken,
+                now,
+                _clientContext.DeviceName ?? currentSession.DeviceName,
+                _clientContext.UserAgent ?? currentSession.UserAgent,
+                _clientContext.IpAddress ?? currentSession.IpAddress,
+                _clientContext.ClientId ?? currentSession.ClientId);
+
+
+            _uow.RefreshTokenSessions.Add(newSession);
+
+            currentSession.Rotate(newSession.Id, now, user.Id);
+
+            await _uow.SaveChangesAsync(ct);
+
+            var accessToken = _jwt.CreateAccessToken(user);
+            return BuildAuthResponse(user, accessToken, newRefreshToken, newSession.ExpiresAtUtc);
+        }
+
+        public async Task LogoutAsync(LogoutRequest req, CancellationToken ct = default)
+        {
+            if (req is null)
+                throw new DomainException("Request is null.");
+
+            if (_currentUser.UserId is not Guid currentUserId || currentUserId == Guid.Empty)
+                return;
+
+            var refreshTokenHash = _refreshTokenService.HashToken(req.RefreshToken);
+            var session = await _uow.RefreshTokenSessions.FindByHashAsync(refreshTokenHash, ct);
+
+            if (session is null || session.UserId != currentUserId)
+                return;
+
+            session.Revoke(_clock.Utcnow, currentUserId);
+            await _uow.SaveChangesAsync(ct);
+        }
+
+        public async Task RevokeAllSessionsAsync(Guid userId, CancellationToken ct = default)
+        {
+            if (userId == Guid.Empty)
+                return;
+
+            await RevokeAllActiveSessionsAsync(userId, _clock.Utcnow, ct);
+            await _uow.SaveChangesAsync(ct);
+        }
+
+        private AuthResponse BuildAuthResponse(
+            User user,
+            string accessToken,
+            string refreshToken,
+            DateTimeOffset refreshTokenExpiresAtUtc)
+        {
+            var roles = user.UserRoles
+                .Select(x => x.Role?.Name)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .Cast<string>()
+                .ToArray();
+
+            if (roles.Length == 0)
+                roles = new[] { "user" };
+
+            return new AuthResponse(
+                user.Id,
+                user.Email,
+                user.Username,
+                user.Fullname,
+                roles,
+                accessToken,
+                refreshToken,
+                refreshTokenExpiresAtUtc);
+        }
+
+        private RefreshTokenSession CreateRefreshTokenSession(
+            Guid userId,
+            string refreshToken,
+            DateTimeOffset nowUtc,
+            string? deviceName,
+            string? userAgent,
+            string? ipAddress,
+            string? clientId)
+        {
+            var refreshTokenHash = _refreshTokenService.HashToken(refreshToken);
+            var expiresAtUtc = _refreshTokenService.GetExpiresAtUtc(nowUtc);
+
+            return RefreshTokenSession.Create(
+                userId,
+                refreshTokenHash,
+                nowUtc,
+                expiresAtUtc,
+                deviceName,
+                userAgent,
+                ipAddress,
+                clientId,
+                actorUserId: userId);
+        }
+
+
+        private async Task RevokeAllActiveSessionsAsync(
+           Guid userId,
+           DateTimeOffset nowUtc,
+           CancellationToken ct)
+        {
+            var activeSessions = await _uow.RefreshTokenSessions.ListActiveByUserIdAsync(userId, nowUtc, ct);
+
+            foreach (var session in activeSessions)
+            {
+                session.Revoke(nowUtc, userId);
+            }
         }
     }
 }
