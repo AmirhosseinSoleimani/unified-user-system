@@ -1,5 +1,6 @@
 ﻿using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Contracts.DTOs.Profile;
 
 namespace UnifiedUserSystem.src.Application.Services.Identity

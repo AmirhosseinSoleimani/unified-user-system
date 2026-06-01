@@ -5,6 +5,7 @@ using Moq;
 using UnifiedUserSystem.src.Api.Controllers;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 
 namespace UnifiedUserSystem.UnitTests.Api.Controllers
 {

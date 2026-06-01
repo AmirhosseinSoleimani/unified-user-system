@@ -1,6 +1,6 @@
 ﻿using UnifiedUserSystem.src.Domain.Authorization.Entities;
 
-namespace UnifiedUserSystem.src.Application.Interfaces
+namespace UnifiedUserSystem.src.Application.Interfaces.Services
 {
     public interface IOperationService
     {

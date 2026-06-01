@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Services;
 using UnifiedUserSystem.src.Contracts.DTOs.Permissions;
 
 namespace UnifiedUserSystem.src.Api.Controllers

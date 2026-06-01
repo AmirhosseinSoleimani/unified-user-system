@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnifiedUserSystem.src.Api.Controllers;
 using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Roles;
 using UnifiedUserSystem.src.Domain.Common;

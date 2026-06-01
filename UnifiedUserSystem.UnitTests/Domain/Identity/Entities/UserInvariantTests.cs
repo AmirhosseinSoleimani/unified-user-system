@@ -2,7 +2,7 @@
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using Xunit;
 
-namespace UnifiedUserSystem.tests.UnifiedUserSystem.UnitTests.Domain.Register
+namespace UnifiedUserSystem.UnitTests.Domain.Identity.Entities
 {
     public class UserTests
     {
@@ -95,7 +95,7 @@ namespace UnifiedUserSystem.tests.UnifiedUserSystem.UnitTests.Domain.Register
         [InlineData("1ali")]
         [InlineData("_ali")]
         [InlineData(".ali")]
-        [InlineData(("ali-xx"))]
+        [InlineData("ali-xx")]
         [InlineData("ali..xx")]
         [InlineData("ali.")]
         [InlineData("al i")]

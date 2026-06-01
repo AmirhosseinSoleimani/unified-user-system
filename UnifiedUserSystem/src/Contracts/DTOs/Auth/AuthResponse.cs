@@ -7,6 +7,8 @@
         string Username,
         string Fullname,
         string[] Roles,
-        string AccessToken
+        string AccessToken,
+        string RefreshToken,
+        DateTimeOffset RefreshTokenExpiresAtUtc
     );
 }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 
 namespace UnifiedUserSystem.src.Api.Controllers
@@ -55,6 +55,15 @@ namespace UnifiedUserSystem.src.Api.Controllers
                 StatusCodes.Status401Unauthorized,
                 ApiResponse<object>.Fail(message));
         }
+
+        protected ActionResult<ApiResponse<T>> UnauthorizedResponse<T>(
+            string message = "Unauthorized.")
+        {
+            return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                ApiResponse<T>.Fail(message));
+        }
+
 
         protected ActionResult<ApiResponse<object>> ForbiddenResponse(
             string message = "Forbidden.")

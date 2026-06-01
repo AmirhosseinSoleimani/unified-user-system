@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 
-namespace UnifiedUserSystem.UnitTests.Domain.Identity
+namespace UnifiedUserSystem.UnitTests.Domain.Identity.Entities
 {
     public class RoleInvariantTests
     {
@@ -61,7 +61,7 @@ namespace UnifiedUserSystem.UnitTests.Domain.Identity
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
-        public void Create_WhenKeyIsEmpty_ShouldThrow(String key)
+        public void Create_WhenKeyIsEmpty_ShouldThrow(string key)
         {
             var ex = Assert.ThrowsAny<DomainException>(() =>
                 Role.Create(key!, "Admin", T1, actorUserId: null));

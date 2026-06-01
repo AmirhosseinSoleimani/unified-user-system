@@ -2,6 +2,7 @@
 using UnifiedUserSystem.src.Contracts.DTOs.Roles;
 using UnifiedUserSystem.src.Contracts.DTOs.Users;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;
