@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Threading.RateLimiting;
 using UnifiedUserSystem.src.Api.Authorization;
 using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application.Interfaces;
@@ -11,12 +13,15 @@ using UnifiedUserSystem.src.Application.Interfaces.Auditing;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
+using UnifiedUserSystem.src.Application.Options;
 using UnifiedUserSystem.src.Application.Services;
 using UnifiedUserSystem.src.Application.Services.Auditing;
 using UnifiedUserSystem.src.Application.Services.Identity;
+using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Business.policies;
 using UnifiedUserSystem.src.Business.validators;
+using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
@@ -31,47 +36,94 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-#region Swagger + JWT
-builder.Services.AddSwaggerGen(c =>
+builder.Services.Configure<AuthProtectionOptions>(
+    builder.Configuration.GetSection("AuthProtection"));
+
+var authProtectionOptions = builder.Configuration
+    .GetSection("AuthProtection")
+    .Get<AuthProtectionOptions>() ?? new AuthProtectionOptions();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = async (context, ct) =>
     {
-        c.CustomSchemaIds(t => t.FullName);
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "UnifiedUserSystem API", Version = "v1" });
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Name = "Authorization",
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            In = ParameterLocation.Header
-        });
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
 
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            ApiResponse<object>.Fail("Too many requests. Please try again later."),
+            ct);
+    };
+
+    options.AddPolicy("AuthRateLimit", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            GetRateLimitPartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
             {
-                new OpenApiSecurityScheme {Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer"} },
-                Array.Empty<string>()
-            }
-        });
-    });
-#endregion
+                PermitLimit = authProtectionOptions.AuthRateLimitPermitLimit,
+                Window = TimeSpan.FromSeconds(authProtectionOptions.AuthRateLimitWindowSeconds),
+                QueueLimit = authProtectionOptions.AuthRateLimitQueueLimit,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
 
-#region Core (HttpContext + Clock + CurrentUser)
+    options.AddPolicy("SensitiveAdminRateLimit", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            GetRateLimitPartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = authProtectionOptions.SensitiveAdminRateLimitPermitLimit,
+                Window = TimeSpan.FromSeconds(authProtectionOptions.SensitiveAdminRateLimitWindowSeconds),
+                QueueLimit = authProtectionOptions.SensitiveAdminRateLimitQueueLimit,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
+});
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.CustomSchemaIds(t => t.FullName);
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "UnifiedUserSystem API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IClientContext, ClientContext>();
-#endregion
 
-#region DbContext
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-#endregion
 
-#region JWT Auth
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<RefreshTokenOptions>(builder.Configuration.GetSection("RefreshToken"));
+
 var jwtOpt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 var keyBytes = Encoding.UTF8.GetBytes(jwtOpt.Key);
+
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
 builder.Services
@@ -91,37 +143,28 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
-#endregion
 
-#region Authorization (OP:...)
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, OperationPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, OperationAuthorizationHandler>();
-#endregion
 
-#region Business (Validators/Policies)
 builder.Services.AddScoped<IPasswordPolicy, PasswordPolicy>();
 builder.Services.AddScoped<IUserBusiness, UserBusiness>();
-#endregion
 
-#region Repositories + UnitOfWordk
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IOperationRepository, OperationRepository>();
 builder.Services.AddScoped<IRoleOperationRepository, RoleOperationRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IRefreshTokenSessionRepository, RefreshTokenSessionRepository>();
-
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-#endregion
 
-#region Security helpers
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-#endregion
+builder.Services.AddSingleton<ITemporarySecurityStateStore, MemoryTemporarySecurityStateStore>();
+builder.Services.AddScoped<IAuthProtectionService, AuthProtectionService>();
 
-#region Aplication services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
@@ -131,21 +174,16 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 
-#endregion
-
-
-#region Middleware
 builder.Services.AddScoped<ExceptionHandlingMiddleware>();
-#endregion
 
 var app = builder.Build();
-
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -153,5 +191,27 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string GetRateLimitPartitionKey(HttpContext context)
+{
+    var forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
+
+    var ipAddress = !string.IsNullOrWhiteSpace(forwardedFor)
+        ? forwardedFor
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault()
+        : context.Connection.RemoteIpAddress?.ToString();
+
+    ipAddress = string.IsNullOrWhiteSpace(ipAddress)
+        ? "unknown-ip"
+        : ipAddress.Trim().ToLowerInvariant();
+
+    var clientId = context.Request.Headers["X-Client-Id"].ToString();
+
+    if (string.IsNullOrWhiteSpace(clientId))
+        return ipAddress;
+
+    return $"{clientId.Trim().ToLowerInvariant()}:{ipAddress}";
+}
 
 public partial class Program { }

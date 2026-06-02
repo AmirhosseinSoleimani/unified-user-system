@@ -1,6 +1,6 @@
 ﻿namespace UnifiedUserSystem.src.Application.Models
 {
-    public class PagedResult
+    public class AuthProtectionCheckResult
     {
     }
 }
