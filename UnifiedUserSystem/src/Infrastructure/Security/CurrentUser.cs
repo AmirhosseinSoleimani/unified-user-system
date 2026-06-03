@@ -1,34 +1,51 @@
-﻿
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
-using UnifiedUserSystem.src.Domain.Identity.Entities;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security
 {
     public class CurrentUser : ICurrentUser
     {
-        private readonly IHttpContextAccessor _http;
-        public CurrentUser(IHttpContextAccessor http)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public CurrentUser(IHttpContextAccessor httpContextAccessor)
         {
-            _http = http;
+            _httpContextAccessor = httpContextAccessor;
         }
-        private ClaimsPrincipal? User => _http.HttpContext?.User;
-        public bool IsAuthenticated => User?.Identity?.IsAuthenticated == true;
 
         public Guid? UserId
         {
             get
             {
-                if (!IsAuthenticated) return null;
+                var principal = GetPrincipal();
 
-                var userId =
-                     User!.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
-                     User.FindFirstValue("sub") ??
-                     User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (principal is null)
+                    return null;
 
-                return Guid.TryParse(userId, out var id) ? id : null;
+                var value = principal.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? principal.FindFirstValue("sub")
+                    ?? principal.FindFirstValue("uid")
+                    ?? principal.FindFirstValue("userId");
+
+                return Guid.TryParse(value, out var userId)
+                    ? userId
+                    : null;
             }
+        }
+
+        public bool IsAuthenticated
+        {
+            get
+            {
+                var principal = GetPrincipal();
+
+                return principal?.Identity?.IsAuthenticated == true;
+            }
+        }
+
+        private ClaimsPrincipal? GetPrincipal()
+        {
+            return _httpContextAccessor.HttpContext?.User;
         }
     }
 }

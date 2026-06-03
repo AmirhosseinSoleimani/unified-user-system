@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using UnifiedUserSystem.src.Api.RateLimiting;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Contracts.Common;
@@ -21,6 +23,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:role.read")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<RoleResponse>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -37,6 +40,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:role.read")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpGet("{roleId:int}")]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -51,6 +55,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:role.create")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -69,6 +74,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:role.update")]
         [HttpPut("{roleId:int}")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -90,6 +96,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:role.rename")]
         [HttpPut("{roleId:int}/rename")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -111,6 +118,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:role.delete")]
         [HttpDelete("{roleId:int}")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -126,6 +134,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:role.activate")]
         [HttpPut("{roleId:int}/activate")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -139,6 +148,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:role.deactivate")]
         [HttpPut("{roleId:int}/deactivate")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -152,6 +162,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:role.remove")]
         [HttpPost("remove")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -169,6 +180,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:roles.operations.read")]
         [HttpGet("{roleId:int}/operations")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -184,6 +196,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:roles.operations.assign")]
         [HttpPost("{roleId:int}/operations")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -205,6 +218,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:roles.operations.remove")]
         [HttpDelete("{roleId:int}/operations/{operationId:guid}")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -222,6 +236,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize(Policy = "OP:roles.operations.replace")]
         [HttpPut("{roleId:int}/operations")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]

@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Threading.RateLimiting;
 using UnifiedUserSystem.src.Api.Authorization;
 using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application.Interfaces;
@@ -11,12 +13,15 @@ using UnifiedUserSystem.src.Application.Interfaces.Auditing;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
+using UnifiedUserSystem.src.Application.Options;
 using UnifiedUserSystem.src.Application.Services;
 using UnifiedUserSystem.src.Application.Services.Auditing;
 using UnifiedUserSystem.src.Application.Services.Identity;
+using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Business.Interfaces;
 using UnifiedUserSystem.src.Business.policies;
 using UnifiedUserSystem.src.Business.validators;
+using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
@@ -31,47 +36,124 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-#region Swagger + JWT
-builder.Services.AddSwaggerGen(c =>
+builder.Services.Configure<AuthProtectionOptions>(
+    builder.Configuration.GetSection("AuthProtection"));
+
+var disableSecurityRateLimiting = builder.Configuration.GetValue<bool>("DisableSecurityRateLimiting");
+
+var authRateLimitPermitLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:AuthRateLimitPermitLimit")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:Auth:PermitLimit")
+    ?? 10;
+
+var authRateLimitWindowSeconds =
+    builder.Configuration.GetValue<int?>("AuthProtection:AuthRateLimitWindowSeconds")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:Auth:WindowSeconds")
+    ?? 60;
+
+var authRateLimitQueueLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:AuthRateLimitQueueLimit")
+    ?? 0;
+
+var sensitiveAdminRateLimitPermitLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:SensitiveAdminRateLimitPermitLimit")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:SensitiveAdmin:PermitLimit")
+    ?? 30;
+
+var sensitiveAdminRateLimitWindowSeconds =
+    builder.Configuration.GetValue<int?>("AuthProtection:SensitiveAdminRateLimitWindowSeconds")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:SensitiveAdmin:WindowSeconds")
+    ?? 60;
+
+var sensitiveAdminRateLimitQueueLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:SensitiveAdminRateLimitQueueLimit")
+    ?? 0;
+
+
+if (!disableSecurityRateLimiting)
+{
+    builder.Services.AddRateLimiter(options =>
     {
-        c.CustomSchemaIds(t => t.FullName);
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "UnifiedUserSystem API", Version = "v1" });
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Name = "Authorization",
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            In = ParameterLocation.Header
-        });
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        options.OnRejected = async (context, ct) =>
         {
-            {
-                new OpenApiSecurityScheme {Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer"} },
-                Array.Empty<string>()
-            }
-        });
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.HttpContext.Response.ContentType = "application/json";
+
+            await context.HttpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object>.Fail("Too many requests. Please try again later."),
+                ct);
+        };
+
+        options.AddPolicy("AuthRateLimit", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                GetRateLimitPartitionKey(httpContext),
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = authRateLimitPermitLimit,
+                    Window = TimeSpan.FromSeconds(authRateLimitWindowSeconds),
+                    QueueLimit = authRateLimitQueueLimit,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                }));
+
+        options.AddPolicy("SensitiveAdminRateLimit", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                GetRateLimitPartitionKey(httpContext),
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = sensitiveAdminRateLimitPermitLimit,
+                    Window = TimeSpan.FromSeconds(sensitiveAdminRateLimitWindowSeconds),
+                    QueueLimit = sensitiveAdminRateLimitQueueLimit,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                }));
     });
-#endregion
+}
 
-#region Core (HttpContext + Clock + CurrentUser)
+builder.Services.AddSwaggerGen(c =>
+{
+    c.CustomSchemaIds(t => t.FullName);
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "UnifiedUserSystem API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IClientContext, ClientContext>();
-#endregion
 
-#region DbContext
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-#endregion
 
-#region JWT Auth
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<RefreshTokenOptions>(builder.Configuration.GetSection("RefreshToken"));
+
 var jwtOpt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 var keyBytes = Encoding.UTF8.GetBytes(jwtOpt.Key);
+
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
 builder.Services
@@ -91,37 +173,28 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
-#endregion
 
-#region Authorization (OP:...)
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, OperationPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, OperationAuthorizationHandler>();
-#endregion
 
-#region Business (Validators/Policies)
 builder.Services.AddScoped<IPasswordPolicy, PasswordPolicy>();
 builder.Services.AddScoped<IUserBusiness, UserBusiness>();
-#endregion
 
-#region Repositories + UnitOfWordk
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IOperationRepository, OperationRepository>();
 builder.Services.AddScoped<IRoleOperationRepository, RoleOperationRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IRefreshTokenSessionRepository, RefreshTokenSessionRepository>();
-
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-#endregion
 
-#region Security helpers
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-#endregion
+builder.Services.AddSingleton<ITemporarySecurityStateStore, MemoryTemporarySecurityStateStore>();
+builder.Services.AddScoped<IAuthProtectionService, AuthProtectionService>();
 
-#region Aplication services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
@@ -131,21 +204,19 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 
-#endregion
-
-
-#region Middleware
 builder.Services.AddScoped<ExceptionHandlingMiddleware>();
-#endregion
 
 var app = builder.Build();
-
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+if (!disableSecurityRateLimiting)
+{
+    app.UseRateLimiter();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -153,5 +224,27 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string GetRateLimitPartitionKey(HttpContext context)
+{
+    var forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
+
+    var ipAddress = !string.IsNullOrWhiteSpace(forwardedFor)
+        ? forwardedFor
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault()
+        : context.Connection.RemoteIpAddress?.ToString();
+
+    ipAddress = string.IsNullOrWhiteSpace(ipAddress)
+        ? "unknown-ip"
+        : ipAddress.Trim().ToLowerInvariant();
+
+    var clientId = context.Request.Headers["X-Client-Id"].ToString();
+
+    if (string.IsNullOrWhiteSpace(clientId))
+        return ipAddress;
+
+    return $"{clientId.Trim().ToLowerInvariant()}:{ipAddress}";
+}
 
 public partial class Program { }

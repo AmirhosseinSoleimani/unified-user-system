@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using UnifiedUserSystem.src.Api.RateLimiting;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
@@ -54,6 +56,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:users.update")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(typeof(ApiResponse<ProfileResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -69,6 +72,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:users.deactivate")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -81,6 +85,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:users.roles.assign")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPost("{userId:guid}/roles")]
         [ProducesResponseType(typeof(ApiResponse<UserRolesResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -101,6 +106,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:users.roles.remove")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpDelete("{userId:guid}/roles/{roleId:int}")]
         [ProducesResponseType(typeof(ApiResponse<UserRolesResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -117,6 +123,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [Authorize(Policy = "OP:users.roles.replace")]
+        [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPut("{userId:guid}/roles")]
         [ProducesResponseType(typeof(ApiResponse<UserRolesResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

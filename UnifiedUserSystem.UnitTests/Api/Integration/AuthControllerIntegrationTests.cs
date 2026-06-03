@@ -38,6 +38,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         {
             await RegisterAsync("login1@example.com", "login1");
 
+            SetUniqueClientHeaders();
+
             var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
             {
                 EmailOrUsername = "login1@example.com",
@@ -56,6 +58,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         {
             var registered = await RegisterAndReadAsync("refresh1@example.com", "refresh1");
 
+            SetUniqueClientHeaders();
+
             var response = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequest
             {
                 RefreshToken = registered.RefreshToken
@@ -73,11 +77,16 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         {
             var registered = await RegisterAndReadAsync("reuse1@example.com", "reuse1");
 
+            SetUniqueClientHeaders();
+
             var firstRefresh = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequest
             {
                 RefreshToken = registered.RefreshToken
             });
+
             firstRefresh.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            SetUniqueClientHeaders();
 
             var reuseResponse = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequest
             {
@@ -91,6 +100,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         public async Task PostLogout_WithValidRefreshToken_ShouldReturnOk()
         {
             var registered = await RegisterAndReadAsync("logout1@example.com", "logout1");
+
+            SetUniqueClientHeaders();
 
             var request = CreateAuthorizedPostRequest(
                 "/api/auth/logout",
@@ -109,7 +120,11 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         public async Task PostLogout_WithInvalidRefreshToken_ShouldReturnUnauthorized()
         {
             var registered = await RegisterAndReadAsync("logout2@example.com", "logout2");
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", registered.AccessToken);
+
+            SetUniqueClientHeaders();
+
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", registered.AccessToken);
 
             var response = await _client.PostAsJsonAsync("/api/auth/logout", new LogoutRequest
             {
@@ -124,9 +139,11 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         {
             var registered = await RegisterAndReadAsync("revoke1@example.com", "revoke1");
 
+            SetUniqueClientHeaders();
+
             var request = CreateAuthorizedPostRequest(
-            "/api/auth/revoke-all-sessions",
-            registered.AccessToken);
+                "/api/auth/revoke-all-sessions",
+                registered.AccessToken);
 
             var response = await _client.SendAsync(request);
 
@@ -134,6 +151,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
 
             using var scope = _factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
             db.RefreshTokenSessions
                 .Where(x => x.UserId == registered.Id)
                 .Should()
@@ -145,14 +163,17 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         {
             var registered = await RegisterAndReadAsync("revoke2@example.com", "revoke2");
 
+            SetUniqueClientHeaders();
+
             var revokeRequest = CreateAuthorizedPostRequest(
                 "/api/auth/revoke-all-sessions",
                 registered.AccessToken);
 
             var revokeResponse = await _client.SendAsync(revokeRequest);
-            revokeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
             revokeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            SetUniqueClientHeaders();
 
             var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequest
             {
@@ -165,6 +186,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         [Fact]
         public async Task PostRefresh_WithMalformedRequest_ShouldReturnBadRequest()
         {
+            SetUniqueClientHeaders();
+
             var response = await _client.PostAsJsonAsync("/api/auth/refresh", new { });
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -175,10 +198,12 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         {
             var registered = await RegisterAndReadAsync("malformedlogout@example.com", "malogout");
 
+            SetUniqueClientHeaders();
+
             var request = CreateAuthorizedPostRequest(
-            "/api/auth/logout",
-            registered.AccessToken,
-            JsonContent.Create(new { }));
+                "/api/auth/logout",
+                registered.AccessToken,
+                JsonContent.Create(new { }));
 
             var response = await _client.SendAsync(request);
 
@@ -188,6 +213,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         [Fact]
         public async Task PostRevokeAllSessions_WithoutAccessToken_ShouldReturnUnauthorized()
         {
+            SetUniqueClientHeaders();
+
             var response = await _client.PostAsync("/api/auth/revoke-all-sessions", null);
 
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -208,6 +235,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         {
             await RegisterAsync("hash2@example.com", "hashuser2");
 
+            SetUniqueClientHeaders();
+
             var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
             {
                 EmailOrUsername = "hash2@example.com",
@@ -222,6 +251,8 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
 
         private async Task<HttpResponseMessage> RegisterAsync(string email, string username)
         {
+            SetUniqueClientHeaders();
+
             return await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
             {
                 Email = email,
@@ -234,6 +265,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         private async Task<AuthResponse> RegisterAndReadAsync(string email, string username)
         {
             var response = await RegisterAsync(email, username);
+
             response.StatusCode.Should().Be(HttpStatusCode.OK);
 
             return (await ReadAuthResponseAsync(response)).Data!;
@@ -242,6 +274,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         private static async Task<ApiResponse<AuthResponse>> ReadAuthResponseAsync(HttpResponseMessage response)
         {
             var payload = await response.Content.ReadFromJsonAsync<ApiResponse<AuthResponse>>();
+
             payload.Should().NotBeNull();
             payload!.Success.Should().BeTrue();
             payload.Data.Should().NotBeNull();
@@ -249,7 +282,10 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
             return payload;
         }
 
-        private static HttpRequestMessage CreateAuthorizedPostRequest(string uri, string accessToken, HttpContent? content = null)
+        private static HttpRequestMessage CreateAuthorizedPostRequest(
+            string uri,
+            string accessToken,
+            HttpContent? content = null)
         {
             accessToken.Should().NotBeNullOrWhiteSpace();
 
@@ -261,6 +297,15 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             return request;
+        }
+
+        private void SetUniqueClientHeaders()
+        {
+            _client.DefaultRequestHeaders.Remove("X-Client-Id");
+            _client.DefaultRequestHeaders.Remove("X-Forwarded-For");
+
+            _client.DefaultRequestHeaders.Add("X-Client-Id", $"auth-integration-{Guid.NewGuid()}");
+            _client.DefaultRequestHeaders.Add("X-Forwarded-For", $"127.0.0.{Random.Shared.Next(2, 250)}");
         }
     }
 }

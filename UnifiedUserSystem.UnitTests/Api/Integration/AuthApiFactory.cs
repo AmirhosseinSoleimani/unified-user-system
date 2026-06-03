@@ -33,12 +33,33 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:Default"] = "Host=localhost;Database=test",
+
                     ["Jwt:Key"] = JwtKey,
                     ["Jwt:Issuer"] = JwtIssuer,
                     ["Jwt:Audience"] = JwtAudience,
                     ["Jwt:ExpiresMinutes"] = "15",
+
                     ["RefreshToken:ExpiresDays"] = "7",
-                    ["RefreshToken:TokenSizeBytes"] = "64"
+                    ["RefreshToken:TokenSizeBytes"] = "64",
+
+                    ["AuthProtection:MaxFailedAttemptsPerIdentity"] = "1000",
+                    ["AuthProtection:MaxFailedAttemptsPerClient"] = "1000",
+                    ["AuthProtection:FailedAttemptWindowMinutes"] = "15",
+                    ["AuthProtection:LockoutMinutes"] = "15",
+                    ["AuthProtection:CooldownSeconds"] = "0",
+
+                    ["AuthProtection:AuthRateLimitPermitLimit"] = "1000",
+                    ["AuthProtection:AuthRateLimitWindowSeconds"] = "60",
+                    ["AuthProtection:AuthRateLimitQueueLimit"] = "0",
+
+                    ["AuthProtection:SensitiveAdminRateLimitPermitLimit"] = "1000",
+                    ["AuthProtection:SensitiveAdminRateLimitWindowSeconds"] = "60",
+                    ["AuthProtection:SensitiveAdminRateLimitQueueLimit"] = "0",
+
+                    ["SecurityRateLimits:Auth:PermitLimit"] = "1000",
+                    ["SecurityRateLimits:Auth:WindowSeconds"] = "60",
+                    ["SecurityRateLimits:SensitiveAdmin:PermitLimit"] = "1000",
+                    ["SecurityRateLimits:SensitiveAdmin:WindowSeconds"] = "60"
                 });
             });
 

@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UnifiedUserSystem.src.Api.RateLimiting;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 using UnifiedUserSystem.src.Domain.Common;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace UnifiedUserSystem.src.Api.Controllers
 {
@@ -22,6 +24,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("AuthRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
@@ -37,6 +40,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -50,13 +54,14 @@ namespace UnifiedUserSystem.src.Api.Controllers
             var response = await _authService.LoginAsync(req, ct);
 
             if (response is null)
-                return UnauthorizedResponse<AuthResponse>("Invalid email/username or password.");
+                return UnauthorizedResponse<AuthResponse>("Authentication failed.");
 
             return OkResponse(response);
         }
 
 
         [HttpPost("refresh")]
+        [EnableRateLimiting("AuthRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -76,6 +81,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize]
         [HttpPost("logout")]
+        [EnableRateLimiting("AuthRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -97,6 +103,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [Authorize]
         [HttpPost("revoke-all-sessions")]
+        [EnableRateLimiting("AuthRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
