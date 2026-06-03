@@ -348,6 +348,7 @@ namespace UnifiedUserSystem.UnitTests.Application.Services
 
         private AuthService CreateSut()
         {
+            var authProtectionServiceMock = new Mock<IAuthProtectionService>();
             return new AuthService(
                 _uow.Object,
                 _hasher.Object,

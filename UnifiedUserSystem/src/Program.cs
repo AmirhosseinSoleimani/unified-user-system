@@ -39,46 +39,76 @@ builder.Services.AddControllers();
 builder.Services.Configure<AuthProtectionOptions>(
     builder.Configuration.GetSection("AuthProtection"));
 
-var authProtectionOptions = builder.Configuration
-    .GetSection("AuthProtection")
-    .Get<AuthProtectionOptions>() ?? new AuthProtectionOptions();
+var disableSecurityRateLimiting = builder.Configuration.GetValue<bool>("DisableSecurityRateLimiting");
 
-builder.Services.AddRateLimiter(options =>
+var authRateLimitPermitLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:AuthRateLimitPermitLimit")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:Auth:PermitLimit")
+    ?? 10;
+
+var authRateLimitWindowSeconds =
+    builder.Configuration.GetValue<int?>("AuthProtection:AuthRateLimitWindowSeconds")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:Auth:WindowSeconds")
+    ?? 60;
+
+var authRateLimitQueueLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:AuthRateLimitQueueLimit")
+    ?? 0;
+
+var sensitiveAdminRateLimitPermitLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:SensitiveAdminRateLimitPermitLimit")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:SensitiveAdmin:PermitLimit")
+    ?? 30;
+
+var sensitiveAdminRateLimitWindowSeconds =
+    builder.Configuration.GetValue<int?>("AuthProtection:SensitiveAdminRateLimitWindowSeconds")
+    ?? builder.Configuration.GetValue<int?>("SecurityRateLimits:SensitiveAdmin:WindowSeconds")
+    ?? 60;
+
+var sensitiveAdminRateLimitQueueLimit =
+    builder.Configuration.GetValue<int?>("AuthProtection:SensitiveAdminRateLimitQueueLimit")
+    ?? 0;
+
+
+if (!disableSecurityRateLimiting)
 {
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.OnRejected = async (context, ct) =>
+    builder.Services.AddRateLimiter(options =>
     {
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        context.HttpContext.Response.ContentType = "application/json";
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-        await context.HttpContext.Response.WriteAsJsonAsync(
-            ApiResponse<object>.Fail("Too many requests. Please try again later."),
-            ct);
-    };
+        options.OnRejected = async (context, ct) =>
+        {
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.HttpContext.Response.ContentType = "application/json";
 
-    options.AddPolicy("AuthRateLimit", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            GetRateLimitPartitionKey(httpContext),
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = authProtectionOptions.AuthRateLimitPermitLimit,
-                Window = TimeSpan.FromSeconds(authProtectionOptions.AuthRateLimitWindowSeconds),
-                QueueLimit = authProtectionOptions.AuthRateLimitQueueLimit,
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-            }));
+            await context.HttpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object>.Fail("Too many requests. Please try again later."),
+                ct);
+        };
 
-    options.AddPolicy("SensitiveAdminRateLimit", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            GetRateLimitPartitionKey(httpContext),
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = authProtectionOptions.SensitiveAdminRateLimitPermitLimit,
-                Window = TimeSpan.FromSeconds(authProtectionOptions.SensitiveAdminRateLimitWindowSeconds),
-                QueueLimit = authProtectionOptions.SensitiveAdminRateLimitQueueLimit,
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-            }));
-});
+        options.AddPolicy("AuthRateLimit", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                GetRateLimitPartitionKey(httpContext),
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = authRateLimitPermitLimit,
+                    Window = TimeSpan.FromSeconds(authRateLimitWindowSeconds),
+                    QueueLimit = authRateLimitQueueLimit,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                }));
+
+        options.AddPolicy("SensitiveAdminRateLimit", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                GetRateLimitPartitionKey(httpContext),
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = sensitiveAdminRateLimitPermitLimit,
+                    Window = TimeSpan.FromSeconds(sensitiveAdminRateLimitWindowSeconds),
+                    QueueLimit = sensitiveAdminRateLimitQueueLimit,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                }));
+    });
+}
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -183,7 +213,10 @@ app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.UseRateLimiter();
+if (!disableSecurityRateLimiting)
+{
+    app.UseRateLimiter();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
