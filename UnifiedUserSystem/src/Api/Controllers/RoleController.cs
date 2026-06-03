@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using UnifiedUserSystem.src.Api.RateLimiting;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Roles;
 using UnifiedUserSystem.src.Domain.Common;
@@ -22,7 +23,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             _roles = roles;
         }
 
-        [Authorize(Policy = "OP:role.read")]
+        [Authorize(Policy = OperationPolicyNames.RolesRead)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<RoleResponse>>), StatusCodes.Status200OK)]
@@ -39,7 +40,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse<IReadOnlyList<RoleResponse>>(response);
         }
 
-        [Authorize(Policy = "OP:role.read")]
+        [Authorize(Policy = OperationPolicyNames.RolesRead)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpGet("{roleId:int}")]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
@@ -54,7 +55,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(role));
         }
 
-        [Authorize(Policy = "OP:role.create")]
+        [Authorize(Policy = OperationPolicyNames.RolesCreate)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
@@ -72,7 +73,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(role), "Role created successfully.");
         }
 
-        [Authorize(Policy = "OP:role.update")]
+        [Authorize(Policy = OperationPolicyNames.RolesUpdate)]
         [HttpPut("{roleId:int}")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
@@ -94,7 +95,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(role), "Role updated successfully.");
         }
 
-        [Authorize(Policy = "OP:role.rename")]
+        [Authorize(Policy = OperationPolicyNames.RolesRename)]
         [HttpPut("{roleId:int}/rename")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -116,7 +117,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = "OP:role.delete")]
+        [Authorize(Policy = OperationPolicyNames.RolesDelete)]
         [HttpDelete("{roleId:int}")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -132,7 +133,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkMessage("Role deleted successfully.");
         }
 
-        [Authorize(Policy = "OP:role.activate")]
+        [Authorize(Policy = OperationPolicyNames.RolesActivate)]
         [HttpPut("{roleId:int}/activate")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -146,7 +147,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = "OP:role.deactivate")]
+        [Authorize(Policy = OperationPolicyNames.RolesDeactivate)]
         [HttpPut("{roleId:int}/deactivate")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -160,7 +161,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = "OP:role.remove")]
+        [Authorize(Policy = OperationPolicyNames.RolesRemove)]
         [HttpPost("remove")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -178,7 +179,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = "OP:roles.operations.read")]
+        [Authorize(Policy = OperationPolicyNames.RolesOperationsRead)]
         [HttpGet("{roleId:int}/operations")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
@@ -194,7 +195,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(response);
         }
 
-        [Authorize(Policy = "OP:roles.operations.assign")]
+        [Authorize(Policy = OperationPolicyNames.RolesOperationsAssign)]
         [HttpPost("{roleId:int}/operations")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
@@ -216,7 +217,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(response, "Operation assigned successfully.");
         }
 
-        [Authorize(Policy = "OP:roles.operations.remove")]
+        [Authorize(Policy = OperationPolicyNames.RolesOperationsRemove)]
         [HttpDelete("{roleId:int}/operations/{operationId:guid}")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]
@@ -234,7 +235,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(response, "Operation removed successfully.");
         }
 
-        [Authorize(Policy = "OP:roles.operations.replace")]
+        [Authorize(Policy = OperationPolicyNames.RolesOperationsReplace)]
         [HttpPut("{roleId:int}/operations")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<RoleOperationsResponse>), StatusCodes.Status200OK)]

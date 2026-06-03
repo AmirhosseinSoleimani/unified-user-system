@@ -31,7 +31,7 @@ namespace UnifiedUserSystem.src.Domain.Authorization.Entities
         }
         public void RenameTitle(string newTitle, DateTimeOffset nowUtc, Guid? actorUserId)
         {
-            newTitle = NormalizeKey(newTitle);
+            newTitle = NormalizeTitle(newTitle);
             ValidateTitle(newTitle);
             if (Title == newTitle) return;
             Title = newTitle;

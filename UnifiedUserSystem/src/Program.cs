@@ -25,6 +25,7 @@ using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Authorization;
 using UnifiedUserSystem.src.Infrastructure.Security;
 using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.Infrastructure.Web;
@@ -150,6 +151,8 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<RefreshTokenOptions>(builder.Configuration.GetSection("RefreshToken"));
+builder.Services.Configure<PermissionEvaluationOptions>(
+    builder.Configuration.GetSection("PermissionEvaluation"));
 
 var jwtOpt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 var keyBytes = Encoding.UTF8.GetBytes(jwtOpt.Key);
@@ -174,6 +177,7 @@ builder.Services
         };
     });
 
+builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, OperationPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, OperationAuthorizationHandler>();
@@ -194,6 +198,10 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddSingleton<ITemporarySecurityStateStore, MemoryTemporarySecurityStateStore>();
 builder.Services.AddScoped<IAuthProtectionService, AuthProtectionService>();
+builder.Services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
+builder.Services.AddScoped<IPermissionReadRepository, EfPermissionReadRepository>();
+builder.Services.AddSingleton<IPermissionCache, MemoryPermissionCache>();
+builder.Services.AddScoped<IPermissionCacheInvalidator, PermissionCacheInvalidator>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();

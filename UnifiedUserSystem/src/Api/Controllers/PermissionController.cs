@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
+using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.Contracts.DTOs.Permissions;
 
 namespace UnifiedUserSystem.src.Api.Controllers
@@ -16,7 +17,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             _perm = perm;
         }
 
-        [Authorize(Policy = "OP:permission.grant")]
+        [Authorize(Policy = OperationPolicyNames.PermissionsGrant)]
         [HttpPost("grant")]
         public async Task<IActionResult> Grant([FromBody] GrantPermissionRequest req)
         {
@@ -25,7 +26,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         }
 
 
-        [Authorize(Policy = "OP:permission.revoke")]
+        [Authorize(Policy = OperationPolicyNames.PermissionsRevoke)]
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke([FromBody] RevokePermissionRequest req)
         {

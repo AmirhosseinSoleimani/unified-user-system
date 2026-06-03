@@ -1,129 +1,180 @@
-﻿using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authorization;
 using Moq;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using UnifiedUserSystem.src.Api.Authorization;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
-using UnifiedUserSystem.src.Domain.Authorization.Entities;
-using UnifiedUserSystem.src.Domain.Identity.Entities;
-using UnifiedUserSystem.src.Infrastructure.Time;
-using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
+
+using FluentAssertions;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace UnifiedUserSystem.UnitTests.Api.Authorization
 {
     public class OperationAuthorizationHandlerTests
     {
-        private static AppDbContext CreateDbContext()
+        private static AuthorizationHandlerContext CreateContext(
+            OperationRequirement requirement,
+            ClaimsPrincipal user)
         {
-            var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
-
-            var currentUser = new Mock<ICurrentUser>();
-            var clock = new Mock<IClock>();
-
-            clock.Setup(x => x.Utcnow).Returns(DateTimeOffset.UtcNow);
-
-            return new AppDbContext(options, currentUser.Object, clock.Object);
+            return new AuthorizationHandlerContext(
+                new[] { requirement },
+                user,
+                resource: null);
         }
 
-        private static AuthorizationHandlerContext CreateContext(string? subClaim)
+        private static ClaimsPrincipal CreateAuthenticatedUser(string? subClaim)
         {
             var claims = new List<Claim>();
 
-            if (subClaim != null)
+            if (subClaim is not null)
                 claims.Add(new Claim(JwtRegisteredClaimNames.Sub, subClaim));
 
             var identity = new ClaimsIdentity(claims, "TestAuth");
-            var user = new ClaimsPrincipal(identity);
 
-            return new AuthorizationHandlerContext(
-                new[] { new OperationRequirement("operation.test") },
-                user,
-                null);
+            return new ClaimsPrincipal(identity);
         }
 
         [Fact]
         public async Task Should_Fail_When_User_Is_Anonymous()
         {
-            var db = CreateDbContext();
-            var handler = new OperationAuthorizationHandler(db);
+            var permissionEvaluator = new Mock<IPermissionEvaluator>();
 
-            var context = new AuthorizationHandlerContext(
-                new[] { new OperationRequirement("operation.test") },
-                new ClaimsPrincipal(new ClaimsIdentity()), // anonymous
-                null);
+            var handler = new OperationAuthorizationHandler(permissionEvaluator.Object);
+            var requirement = new OperationRequirement("operation.test");
+
+            var context = CreateContext(
+                requirement,
+                new ClaimsPrincipal(new ClaimsIdentity()));
 
             await handler.HandleAsync(context);
 
             context.HasSucceeded.Should().BeFalse();
+
+            permissionEvaluator.Verify(
+                x => x.HasPermissionAsync(
+                    It.IsAny<Guid>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
         public async Task Should_Fail_When_Sub_Claim_Is_Invalid()
         {
-            var db = CreateDbContext();
-            var handler = new OperationAuthorizationHandler(db);
+            var permissionEvaluator = new Mock<IPermissionEvaluator>();
 
-            var context = CreateContext("invalid-guid");
+            var handler = new OperationAuthorizationHandler(permissionEvaluator.Object);
+            var requirement = new OperationRequirement("operation.test");
+
+            var context = CreateContext(
+                requirement,
+                CreateAuthenticatedUser("invalid-guid"));
 
             await handler.HandleAsync(context);
 
             context.HasSucceeded.Should().BeFalse();
+
+            permissionEvaluator.Verify(
+                x => x.HasPermissionAsync(
+                    It.IsAny<Guid>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
         public async Task Should_Fail_When_User_Does_Not_Have_Operation()
         {
-            var db = CreateDbContext();
+            var userId = Guid.NewGuid();
 
-            var user = User.CreateNew("a@a.com", "user1", "User One", "hash", DateTimeOffset.UtcNow, null);
+            var permissionEvaluator = new Mock<IPermissionEvaluator>();
+            permissionEvaluator
+                .Setup(x => x.HasPermissionAsync(
+                    userId,
+                    "operation.test",
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
 
-            db.Users.Add(user);
-            await db.SaveChangesAsync();
+            var handler = new OperationAuthorizationHandler(permissionEvaluator.Object);
+            var requirement = new OperationRequirement("operation.test");
 
-            var handler = new OperationAuthorizationHandler(db);
-            var context = CreateContext(user.Id.ToString());
+            var context = CreateContext(
+                requirement,
+                CreateAuthenticatedUser(userId.ToString()));
 
             await handler.HandleAsync(context);
 
             context.HasSucceeded.Should().BeFalse();
+
+            permissionEvaluator.Verify(
+                x => x.HasPermissionAsync(
+                    userId,
+                    "operation.test",
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
-        public async Task Should_Succeed_When_User_Has_Operation_Through_Role()
+        public async Task Should_Succeed_When_User_Has_Operation()
         {
-            var db = CreateDbContext();
-            var now = DateTimeOffset.UtcNow;
+            var userId = Guid.NewGuid();
 
-            var user = User.CreateNew("a@a.com", "user1", "User One", "hash", now, null);
+            var permissionEvaluator = new Mock<IPermissionEvaluator>();
+            permissionEvaluator
+                .Setup(x => x.HasPermissionAsync(
+                    userId,
+                    "operation.test",
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
-            var role = Role.Create("admin", "Admin", now, null);
+            var handler = new OperationAuthorizationHandler(permissionEvaluator.Object);
+            var requirement = new OperationRequirement("operation.test");
 
-            // manually set role Id (needed for FK)
-            typeof(Role).GetProperty("Id")!.SetValue(role, 1);
-
-            var operation = Operation.Create("operation.test", "Test", now, null);
-
-            var roleOperation = RoleOperation.Create(role.Id, operation.Id, now, null);
-            var userRole = UserRole.Create(user.Id, role.Id, now, null);
-
-            db.Users.Add(user);
-            db.Roles.Add(role);
-            db.Operation.Add(operation);
-            db.RoleOperations.Add(roleOperation);
-            db.UserRoles.Add(userRole);
-
-            await db.SaveChangesAsync();
-
-            var handler = new OperationAuthorizationHandler(db);
-            var context = CreateContext(user.Id.ToString());
+            var context = CreateContext(
+                requirement,
+                CreateAuthenticatedUser(userId.ToString()));
 
             await handler.HandleAsync(context);
 
             context.HasSucceeded.Should().BeTrue();
+
+            permissionEvaluator.Verify(
+                x => x.HasPermissionAsync(
+                    userId,
+                    "operation.test",
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task Should_Call_PermissionEvaluator_With_OperationKey()
+        {
+            var userId = Guid.NewGuid();
+
+            var permissionEvaluator = new Mock<IPermissionEvaluator>();
+            permissionEvaluator
+                .Setup(x => x.HasPermissionAsync(
+                    userId,
+                    "users.read",
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var handler = new OperationAuthorizationHandler(permissionEvaluator.Object);
+            var requirement = new OperationRequirement("users.read");
+
+            var context = CreateContext(
+                requirement,
+                CreateAuthenticatedUser(userId.ToString()));
+
+            await handler.HandleAsync(context);
+
+            context.HasSucceeded.Should().BeTrue();
+
+            permissionEvaluator.Verify(
+                x => x.HasPermissionAsync(
+                    userId,
+                    "users.read",
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
     }
 }

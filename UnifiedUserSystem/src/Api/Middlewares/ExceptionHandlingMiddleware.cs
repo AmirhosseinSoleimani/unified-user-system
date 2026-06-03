@@ -33,9 +33,13 @@ namespace UnifiedUserSystem.src.Api.Middlewares
             {
                 await WriteProblem(context, StatusCodes.Status400BadRequest, "Bad request", ex.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                await WriteProblem(context, StatusCodes.Status500InternalServerError, "server error", $"Unexpected error: {ex.Message}");
+                await WriteProblem(
+                    context,
+                    StatusCodes.Status500InternalServerError,
+                    "Server error",
+                    "An unexpected error occurred.");
             }
         }
 

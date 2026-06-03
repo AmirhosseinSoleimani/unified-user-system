@@ -236,7 +236,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
             payload.Data.Should().NotBeNull();
             payload.Data!.Id.Should().Be(operation.Id);
             payload.Data.Key.Should().Be("role.update");
-            payload.Data.Title.Should().Be("update roles");
+            payload.Data.Title.Should().Be("Update Roles");
             payload.Data.IsActive.Should().BeTrue();
         }
 
