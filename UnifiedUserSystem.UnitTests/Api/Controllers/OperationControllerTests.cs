@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using UnifiedUserSystem.src.Api.Controllers;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
+using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Operations;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
@@ -54,7 +55,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
             var authorizeAttribute = GetAuthorizeAttribute(nameof(OperationController.List));
 
             // Assert
-            authorizeAttribute.Policy.Should().Be("OP:operation.read");
+            authorizeAttribute.Policy.Should().Be(OperationPolicyNames.OperationsRead);
         }
 
         [Fact]
@@ -118,7 +119,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
             var authorizeAttribute = GetAuthorizeAttribute(nameof(OperationController.Create));
 
             // Assert
-            authorizeAttribute.Policy.Should().Be("OP:operation.create");
+            authorizeAttribute.Policy.Should().Be(OperationPolicyNames.OperationsCreate);
         }
 
         [Fact]
@@ -196,7 +197,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
             var authorizeAttribute = GetAuthorizeAttribute(nameof(OperationController.Update));
 
             // Assert
-            authorizeAttribute.Policy.Should().Be("OP:operation.update");
+            authorizeAttribute.Policy.Should().Be(OperationPolicyNames.OperationsUpdate);
         }
 
         [Fact]
@@ -277,7 +278,7 @@ namespace UnifiedUserSystem.UnitTests.Api.Controllers
             var authorizeAttribute = GetAuthorizeAttribute(nameof(OperationController.Delete));
 
             // Assert
-            authorizeAttribute.Policy.Should().Be("OP:operation.delete");
+            authorizeAttribute.Policy.Should().Be(OperationPolicyNames.OperationsDelete);
         }
 
         [Fact]
