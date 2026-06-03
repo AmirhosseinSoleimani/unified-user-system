@@ -5,6 +5,7 @@ using UnifiedUserSystem.src.Api.RateLimiting;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Profile;
 using UnifiedUserSystem.src.Contracts.DTOs.Users;
@@ -32,7 +33,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             _roleService = roleService;
         }
 
-        [Authorize(Policy = "OP:users.read")]
+        [Authorize(Policy = OperationPolicyNames.UsersRead)]
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<ActiveUserListItemResponse>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -43,7 +44,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(users);
         }
 
-        [Authorize(Policy = "OP:users.read")]
+        [Authorize(Policy = OperationPolicyNames.UsersRead)]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(ApiResponse<ProfileResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -55,7 +56,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(user);
         }
 
-        [Authorize(Policy = "OP:users.update")]
+        [Authorize(Policy = OperationPolicyNames.UsersUpdate)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(typeof(ApiResponse<ProfileResponse>), StatusCodes.Status200OK)]
@@ -71,7 +72,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(user);
         }
 
-        [Authorize(Policy = "OP:users.deactivate")]
+        [Authorize(Policy = OperationPolicyNames.UsersDeactivate)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -84,7 +85,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkMessage("User deactivated successfully.");
         }
 
-        [Authorize(Policy = "OP:users.roles.assign")]
+        [Authorize(Policy = OperationPolicyNames.UsersRolesAssign)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPost("{userId:guid}/roles")]
         [ProducesResponseType(typeof(ApiResponse<UserRolesResponse>), StatusCodes.Status200OK)]
@@ -105,7 +106,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(response, "Role assigned successfully.");
         }
 
-        [Authorize(Policy = "OP:users.roles.remove")]
+        [Authorize(Policy = OperationPolicyNames.UsersRolesRemove)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpDelete("{userId:guid}/roles/{roleId:int}")]
         [ProducesResponseType(typeof(ApiResponse<UserRolesResponse>), StatusCodes.Status200OK)]
@@ -122,7 +123,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(response, "Role removed successfully.");
         }
 
-        [Authorize(Policy = "OP:users.roles.replace")]
+        [Authorize(Policy = OperationPolicyNames.UsersRolesReplace)]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [HttpPut("{userId:guid}/roles")]
         [ProducesResponseType(typeof(ApiResponse<UserRolesResponse>), StatusCodes.Status200OK)]

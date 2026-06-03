@@ -133,7 +133,7 @@ namespace UnifiedUserSystem.UnitTests.Infrastructure.Persistence.Repositories
             // Assert
             var persisted = await dbContext.Operation.SingleAsync();
             persisted.Key.Should().Be("role.update");
-            persisted.Title.Should().Be("update roles");
+            persisted.Title.Should().Be("Update Roles");
             persisted.IsDeleted.Should().BeFalse();
         }
 

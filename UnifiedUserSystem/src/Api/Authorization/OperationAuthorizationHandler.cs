@@ -1,39 +1,39 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
 
 namespace UnifiedUserSystem.src.Api.Authorization
 {
-    public class OperationAuthorizationHandler : AuthorizationHandler<OperationRequirement>
+    public sealed class OperationAuthorizationHandler : AuthorizationHandler<OperationRequirement>
     {
-        private readonly AppDbContext _db;
+        private readonly IPermissionEvaluator _permissionEvaluator;
 
-        public OperationAuthorizationHandler(AppDbContext db)
+        public OperationAuthorizationHandler(IPermissionEvaluator permissionEvaluator)
         {
-            _db = db;
+            _permissionEvaluator = permissionEvaluator;
         }
 
         protected override async Task HandleRequirementAsync(
             AuthorizationHandlerContext context,
-            OperationRequirement requirement
-            )
+            OperationRequirement requirement)
         {
-            if (context.User?.Identity?.IsAuthenticated != true) return;
+            if (context.User?.Identity?.IsAuthenticated != true)
+                return;
 
-            var sub = context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var userIdValue =
+                context.User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+                context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                context.User.FindFirstValue("sub") ??
+                context.User.FindFirstValue("uid") ??
+                context.User.FindFirstValue("userId");
 
-            if (!Guid.TryParse(sub, out var userId)) return;
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return;
 
-            var allowed = await _db.UserRoles.AnyAsync(ur =>
-                ur.UserId == userId &&
-                ur.User.IsActive &&
-                ur.Role.IsActive &&
-                ur.Role.RoleOperations.Any(ro =>
-                ro.Operation.IsActive && ro.Operation.Key == requirement.OperationKey)
-            );
+            var allowed = await _permissionEvaluator.HasPermissionAsync(
+                userId,
+                requirement.OperationKey);
 
             if (allowed)
                 context.Succeed(requirement);

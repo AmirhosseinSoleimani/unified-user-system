@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
-using UnifiedUserSystem.src.Application.Interfaces;
+﻿using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Auditing;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Contracts.DTOs.Profile;
 using UnifiedUserSystem.src.Contracts.DTOs.Users;
 using UnifiedUserSystem.src.Domain.Common;
@@ -21,6 +21,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPasswordPolicy _passwordPolicy;
         private readonly IAuditLogWriter _auditLogWriter;
+        private readonly IPermissionCacheInvalidator _permissionCacheInvalidator;
 
         public UserCommandService(
             IUnitOfWork unitOfWork,
@@ -28,8 +29,26 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             ICurrentUser currentUser,
             IPasswordHasher passwordHasher,
             IPasswordPolicy passwordPolicy,
-            IAuditLogWriter auditLogWriter
-            )
+            IAuditLogWriter auditLogWriter)
+            : this(
+                unitOfWork,
+                clock,
+                currentUser,
+                passwordHasher,
+                passwordPolicy,
+                auditLogWriter,
+                NullPermissionCacheInvalidator.Instance)
+        {
+        }
+
+        public UserCommandService(
+            IUnitOfWork unitOfWork,
+            IClock clock,
+            ICurrentUser currentUser,
+            IPasswordHasher passwordHasher,
+            IPasswordPolicy passwordPolicy,
+            IAuditLogWriter auditLogWriter,
+            IPermissionCacheInvalidator? permissionCacheInvalidator = null)
         {
             _unitOfWork = unitOfWork;
             _clock = clock;
@@ -37,6 +56,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             _passwordHasher = passwordHasher;
             _passwordPolicy = passwordPolicy;
             _auditLogWriter = auditLogWriter;
+            _permissionCacheInvalidator = permissionCacheInvalidator ?? NullPermissionCacheInvalidator.Instance;
         }
 
         public async Task DeactivateUserAsync(Guid id, CancellationToken ct = default)
@@ -50,6 +70,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             user.Deactive(_clock.Utcnow, _currentUser.UserId);
             await _unitOfWork.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForUserAsync(user.Id, ct);
 
             if (wasActive && !user.IsActive)
             {
@@ -70,10 +91,12 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                     }
                 }, ct);
             }
-
         }
 
-        public async Task<ProfileResponse> UpdateUserAsync(Guid id, UpdateUserRequest req, CancellationToken ct = default)
+        public async Task<ProfileResponse> UpdateUserAsync(
+            Guid id,
+            UpdateUserRequest req,
+            CancellationToken ct = default)
         {
             if (req is null)
                 throw new DomainException("Request is null.");
@@ -94,6 +117,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             var actorUserId = _currentUser.UserId;
             var oldValues = new Dictionary<string, object?>();
             var newValues = new Dictionary<string, object?>();
+
             var originalFullname = user.Fullname;
             var originalUsername = user.Username;
 
@@ -119,6 +143,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             if (hasPassword)
             {
                 _passwordPolicy.Validate(req.Password!);
+
                 var passwordHash = _passwordHasher.Hash(req.Password!);
                 user.ChangePasswordHash(passwordHash, now, actorUserId);
             }
@@ -141,7 +166,6 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 newValues["PasswordChanged"] = true;
             }
 
-
             await _unitOfWork.SaveChangesAsync(ct);
 
             if (oldValues.Count > 0 || newValues.Count > 0)
@@ -157,7 +181,6 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                     NewValues = newValues
                 }, ct);
             }
-
 
             var roles = user.UserRoles
                 .Where(x => x.Role != null)

@@ -11,12 +11,18 @@ namespace UnifiedUserSystem.src.Application.Services
         private readonly IUnitOfWork _uow;
         private readonly IClock _clock;
         private readonly ICurrentUser _currentUser;
+        private readonly IPermissionCacheInvalidator _permissionCacheInvalidator;
 
-        public PermissionService(IUnitOfWork uow, IClock clock, ICurrentUser currentUser)
+        public PermissionService(
+            IUnitOfWork uow,
+            IClock clock,
+            ICurrentUser currentUser,
+            IPermissionCacheInvalidator permissionCacheInvalidator)
         {
             _uow = uow;
             _clock = clock;
             _currentUser = currentUser;
+            _permissionCacheInvalidator = permissionCacheInvalidator;
         }
         public async Task GrantOperationToRoleAsync(int roleId, Guid operationId, CancellationToken ct = default)
         {
@@ -36,7 +42,8 @@ namespace UnifiedUserSystem.src.Application.Services
             var link = RoleOperation.Create(roleId, operationId, _clock.Utcnow, _currentUser.UserId);
             await _uow.RoleOperations.AddAsync(link, ct);
 
-            await _uow.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForRoleAsync(roleId, ct);
         }
 
         public async Task RevokeOperationFromRoleAsync(int roleId, Guid operationId, CancellationToken ct = default)
@@ -45,7 +52,8 @@ namespace UnifiedUserSystem.src.Application.Services
             if (link is null) return;
 
             _uow.RoleOperations.Remove(link);
-            await _uow.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForRoleAsync(roleId, ct);
         }
     }
 }

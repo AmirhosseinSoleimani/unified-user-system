@@ -1,6 +1,7 @@
 ﻿using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
+using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Infrastructure.Time;
@@ -12,12 +13,18 @@ namespace UnifiedUserSystem.src.Application.Services
         private readonly IUnitOfWork _uow;
         private readonly IClock _clock;
         private readonly ICurrentUser _currentUser;
+        private readonly IPermissionCacheInvalidator _permissionCacheInvalidator;
 
-        public OperationService(IUnitOfWork uow, IClock clock, ICurrentUser currentUser) 
+        public OperationService(
+            IUnitOfWork uow,
+            IClock clock,
+            ICurrentUser currentUser,
+            IPermissionCacheInvalidator? permissionCacheInvalidator = null)
         {
             _uow = uow;
             _clock = clock;
             _currentUser = currentUser;
+            _permissionCacheInvalidator = permissionCacheInvalidator ?? NullPermissionCacheInvalidator.Instance;
         }
 
         public async Task<IReadOnlyList<Operation>> ListOperationsAsync(CancellationToken ct = default)
@@ -53,7 +60,7 @@ namespace UnifiedUserSystem.src.Application.Services
 
             _uow.Operations.Add(op);
             await _uow.SaveChangesAsync(ct);
-
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
             return op;
         }
 
@@ -70,6 +77,8 @@ namespace UnifiedUserSystem.src.Application.Services
             var op = await _uow.Operations.FindByIdAsync(operationId, ct)
                 ?? throw new KeyNotFoundException("Operation not found.");
 
+            var oldKey = op.Key;
+
             var normalizedKey = Operation.NormalizeKey(key);
 
             var exists = await _uow.Operations.FindByKeyAsync(normalizedKey, ct);
@@ -80,7 +89,8 @@ namespace UnifiedUserSystem.src.Application.Services
             op.RenameTitle(title, _clock.Utcnow, _currentUser.UserId);
 
             await _uow.SaveChangesAsync(ct);
-
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(oldKey, ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
             return op;
         }
 
@@ -90,6 +100,7 @@ namespace UnifiedUserSystem.src.Application.Services
 
             var op = await _uow.Operations.FindByIdAsync(operationId, ct)
                 ?? throw new KeyNotFoundException("Operation not found.");
+            var operationKey = op.Key;
 
             var hasAssignedRoles = await _uow.Operations.HasAssignedRolesAsync(operationId, ct);
             if (hasAssignedRoles)
@@ -97,6 +108,7 @@ namespace UnifiedUserSystem.src.Application.Services
 
             op.Delete(_clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(operationKey, ct);
         }
 
         public async Task ActivateOperatioAsync(Guid operationId, CancellationToken ct = default)
@@ -111,6 +123,7 @@ namespace UnifiedUserSystem.src.Application.Services
 
             op.Active(_clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
         }
 
         public async Task ChangeOperationKeyAsync(Guid operationId, string newKey, CancellationToken ct = default)
@@ -123,9 +136,12 @@ namespace UnifiedUserSystem.src.Application.Services
 
             var op = await _uow.Operations.FindByIdAsync(operationId, ct)
                 ?? throw new InvalidOperationException("Operation not found.");
+            var oldKey = op.Key;
 
             op.ChangeKey(newKey, _clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(oldKey, ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
         }
 
         public async Task DeactivateOperationAsync(Guid operationId, CancellationToken ct = default)
@@ -135,6 +151,7 @@ namespace UnifiedUserSystem.src.Application.Services
 
             op.Deactive(_clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
         }
 
         public async Task RenameOperationTitleAsync(Guid operationId, string newTitle, CancellationToken ct = default)

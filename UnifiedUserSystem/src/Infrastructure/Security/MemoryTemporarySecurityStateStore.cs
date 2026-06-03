@@ -51,6 +51,7 @@ namespace UnifiedUserSystem.src.Infrastructure.Security
                 var next = current + 1;
 
                 _entries[key] = entry with { Value = next.ToString() };
+
                 return Task.FromResult(next);
             }
         }

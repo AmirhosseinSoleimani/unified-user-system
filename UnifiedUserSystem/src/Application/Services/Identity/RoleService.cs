@@ -1,8 +1,9 @@
 ﻿using UnifiedUserSystem.src.Application.Interfaces;
+using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Contracts.DTOs.Roles;
 using UnifiedUserSystem.src.Contracts.DTOs.Users;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Time;
@@ -14,12 +15,18 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
         private readonly IUnitOfWork _uow;
         private readonly IClock _clock;
         private readonly ICurrentUser _currentUser;
+        private readonly IPermissionCacheInvalidator _permissionCacheInvalidator;
 
-        public RoleService(IUnitOfWork uow, IClock clock, ICurrentUser currentUser)
+        public RoleService(
+            IUnitOfWork uow,
+            IClock clock,
+            ICurrentUser currentUser,
+            IPermissionCacheInvalidator? permissionCacheInvalidator = null)
         {
             _uow = uow;
             _clock = clock;
             _currentUser = currentUser;
+            _permissionCacheInvalidator = permissionCacheInvalidator ?? NullPermissionCacheInvalidator.Instance;
         }
 
         public async Task<Role> CreateRoleAsync(string name, CancellationToken ct = default)
@@ -57,6 +64,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             role.Deactivate(_clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForRoleAsync(roleId, ct);
         }
 
         public async Task ActivateRoleAsync(int roleId, CancellationToken ct = default)
@@ -66,6 +74,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             role.Activate(_clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForRoleAsync(roleId, ct);
         }
 
         public Task<IReadOnlyList<Role>> ListRolesAsync(CancellationToken ct = default)
@@ -115,6 +124,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             role.Delete(_clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForRoleAsync(roleId, ct);
         }
 
         public async Task RenameRoleAsync(int roleId, string newName, CancellationToken ct = default)
@@ -148,6 +158,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             user.AssignRole(role.Id, _clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForUserAsync(userId, ct);
 
             return ToUserRolesResponse(user);
         }
@@ -163,6 +174,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             user.RemoveRole(role.Id, _clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForUserAsync(userId, ct);
 
             return ToUserRolesResponse(user);
         }
@@ -208,6 +220,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             }
 
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForUserAsync(userId, ct);
 
             return ToUserRolesResponse(user);
         }
@@ -231,6 +244,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 var roleOperation = RoleOperation.Create(role.Id, operation.Id, _clock.Utcnow, _currentUser.UserId);
                 await _uow.RoleOperations.AddAsync(roleOperation, ct);
                 await _uow.SaveChangesAsync(ct);
+                await _permissionCacheInvalidator.InvalidateForRoleAsync(role.Id, ct);
             }
 
             var roleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
@@ -247,6 +261,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             {
                 _uow.RoleOperations.Remove(roleOperation);
                 await _uow.SaveChangesAsync(ct);
+                await _permissionCacheInvalidator.InvalidateForRoleAsync(role.Id, ct);
             }
 
             var roleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
@@ -299,6 +314,7 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             }
 
             await _uow.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForRoleAsync(role.Id, ct);
 
             var updatedRoleOperations = await _uow.RoleOperations.ListByRoleIdAsync(role.Id, ct);
             return ToRoleOperationsResponse(role, updatedRoleOperations);

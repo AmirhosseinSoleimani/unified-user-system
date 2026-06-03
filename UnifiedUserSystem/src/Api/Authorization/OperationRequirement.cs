@@ -2,15 +2,18 @@
 
 namespace UnifiedUserSystem.src.Api.Authorization
 {
-    public class OperationRequirement : IAuthorizationRequirement
+    public sealed class OperationRequirement : IAuthorizationRequirement
     {
-        public string OperationKey { get; }
-
         public OperationRequirement(string operationKey)
         {
-            OperationKey = (operationKey ?? "").Trim().ToLowerInvariant();
+            operationKey = (operationKey ?? string.Empty).Trim().ToLowerInvariant();
+
             if (string.IsNullOrWhiteSpace(operationKey))
                 throw new ArgumentException("OperationKey is required.", nameof(operationKey));
+
+            OperationKey = operationKey;
         }
+
+        public string OperationKey { get; }
     }
 }

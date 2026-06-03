@@ -1,67 +1,89 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnifiedUserSystem.src.Api.Authorization;
-using UnifiedUserSystem.src.Api.Controllers;
+using UnifiedUserSystem.src.Application.Security;
 
 namespace UnifiedUserSystem.UnitTests.Api.Authorization
 {
     public class OperationPolicyProviderTests
     {
-        private static OperationPolicyProvider CreateSut()
-        {
-            var options = Options.Create(new AuthorizationOptions());
-            return new OperationPolicyProvider(options);
-        }
-
         [Fact]
-        public async Task GetPolicyAsync_Should_CreateAuthorizationPolicyWithSingleOperationRequirement_When_PolicyUsesOpColonPrefix()
+        public async Task OperationPolicyProvider_GetPolicyAsync_WithOperationPolicy_ShouldReturnPolicyWithOperationRequirement()
         {
             var sut = CreateSut();
 
-            var policy = await sut.GetPolicyAsync("OP:role.create");
+            var policy = await sut.GetPolicyAsync(OperationPolicyNames.UsersRead);
 
             policy.Should().NotBeNull();
-
-            var operationRequirement = policy!.Requirements
-                .OfType<OperationRequirement>()
-                .Single();
-
-            operationRequirement.OperationKey.Should().Be("role.create");
-
-            policy.Requirements.Should()
-                .Contain(r => r.GetType().Name == "DenyAnonymousAuthorizationRequirement");
+            policy!.Requirements.OfType<OperationRequirement>().Single().OperationKey.Should().Be("users.read");
         }
 
         [Fact]
-        public async Task GetPolicyAsync_Should_ReturnNull_When_PolicyUsesLegacyDotPrefix()
+        public async Task OperationPolicyProvider_GetPolicyAsync_WithOperationPolicy_ShouldRequireAuthenticatedUser()
         {
             var sut = CreateSut();
 
-            var policy = await sut.GetPolicyAsync("OP.operation.create");
+            var policy = await sut.GetPolicyAsync(OperationPolicyNames.UsersRead);
 
-            policy.Should().BeNull();
+            policy.Should().NotBeNull();
+            policy!.Requirements.OfType<DenyAnonymousAuthorizationRequirement>().Should().ContainSingle();
         }
 
         [Fact]
-        public void ChangeKey_Should_UseOpColonOperationChangeKeyPolicy_When_AuthorizeAttributeIsApplied()
+        public async Task OperationPolicyProvider_GetPolicyAsync_WithNonOperationPolicy_ShouldDelegateToFallbackProvider()
         {
-            var method = typeof(OperationController).GetMethod(nameof(OperationController.ChangeKey));
+            var options = new AuthorizationOptions();
+            options.AddPolicy("named-policy", builder => builder.RequireClaim("scope", "test"));
 
-            method.Should().NotBeNull();
+            var sut = CreateSut(options);
 
-            var authorizeAttribute = method!
-                .GetCustomAttributes<AuthorizeAttribute>(inherit: true)
-                .SingleOrDefault();
+            var policy = await sut.GetPolicyAsync("named-policy");
 
-            authorizeAttribute.Should().NotBeNull();
-            authorizeAttribute!.Policy.Should().Be("OP:operation.changeKey");
+            policy.Should().NotBeNull();
+            policy!.Requirements.OfType<ClaimsAuthorizationRequirement>()
+                .Single()
+                .ClaimType
+                .Should()
+                .Be("scope");
+        }
+
+        [Fact]
+        public async Task OperationPolicyProvider_GetDefaultPolicyAsync_ShouldDelegateToFallbackProvider()
+        {
+            var sut = CreateSut();
+
+            var policy = await sut.GetDefaultPolicyAsync();
+
+            policy.Requirements.OfType<DenyAnonymousAuthorizationRequirement>().Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task OperationPolicyProvider_GetFallbackPolicyAsync_ShouldDelegateToFallbackProvider()
+        {
+            var options = new AuthorizationOptions
+            {
+                FallbackPolicy = new AuthorizationPolicyBuilder()
+                    .RequireClaim("fallback", "true")
+                    .Build()
+            };
+
+            var sut = CreateSut(options);
+
+            var policy = await sut.GetFallbackPolicyAsync();
+
+            policy.Should().NotBeNull();
+            policy!.Requirements.OfType<ClaimsAuthorizationRequirement>()
+                .Single()
+                .ClaimType
+                .Should()
+                .Be("fallback");
+        }
+
+        private static OperationPolicyProvider CreateSut(AuthorizationOptions? options = null)
+        {
+            return new OperationPolicyProvider(Options.Create(options ?? new AuthorizationOptions()));
         }
     }
 }

@@ -221,7 +221,7 @@ namespace UnifiedUserSystem.UnitTests.Application.Services
             // Assert
             result.Should().BeSameAs(operation);
             result.Key.Should().Be("role.update");
-            result.Title.Should().Be("update roles");
+            result.Title.Should().Be("Update Roles");
 
             operationRepositoryMock.Verify(x => x.FindByIdAsync(operation.Id, ct), Times.Once);
             operationRepositoryMock.Verify(x => x.FindByKeyAsync("role.update", ct), Times.Once);
