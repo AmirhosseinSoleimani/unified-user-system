@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using UnifiedUserSystem.src.Api.RateLimiting;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Interfaces.Services;
+using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Operations;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
@@ -22,7 +23,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             _ops = ops;
         }
 
-        [Authorize(Policy = "OP:operation.read")]
+        [Authorize(Policy = OperationPolicyNames.OperationsRead)]
         [HttpGet]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<OperationResponse>>), StatusCodes.Status200OK)]
@@ -39,7 +40,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse<IReadOnlyList<OperationResponse>>(response);
         }
 
-        [Authorize(Policy = "OP:operation.read")]
+        [Authorize(Policy = OperationPolicyNames.OperationsRead)]
         [HttpGet("{operationId:guid}")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<OperationResponse>), StatusCodes.Status200OK)]
@@ -56,7 +57,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(operation));
         }
 
-        [Authorize(Policy = "OP:operation.create")]
+        [Authorize(Policy = OperationPolicyNames.OperationsCreate)]
         [HttpPost]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<OperationResponse>), StatusCodes.Status200OK)]
@@ -76,7 +77,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(op), "Operation created successfully.");
         }
 
-        [Authorize(Policy = "OP:operation.update")]
+        [Authorize(Policy = OperationPolicyNames.OperationsUpdate)]
         [HttpPut("{operationId:guid}")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<OperationResponse>), StatusCodes.Status200OK)]
@@ -98,7 +99,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkResponse(ToResponse(op), "Operation updated successfully.");
         }
 
-        [Authorize(Policy = "OP:operation.renameTitle")]
+        [Authorize(Policy = OperationPolicyNames.OperationsRenameTitle)]
         [HttpPut("{operationId:guid}/title")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -119,7 +120,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = "OP:operation.changeKey")]
+        [Authorize(Policy = OperationPolicyNames.OperationsChangeKey)]
         [HttpPut("{operationId:guid}/key")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -141,7 +142,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = "OP:operation.delete")]
+        [Authorize(Policy = OperationPolicyNames.OperationsDelete)]
         [HttpDelete("{operationId:guid}")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -159,7 +160,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return OkMessage("Operation deleted successfully.");
         }
 
-        [Authorize(Policy = "OP:operation.activate")]
+        [Authorize(Policy = OperationPolicyNames.OperationsActivate)]
         [HttpPut("{operationId:guid}/activate")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
@@ -175,7 +176,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = "OP:operation.deactivate")]
+        [Authorize(Policy = OperationPolicyNames.OperationsDeactivate)]
         [HttpPut("{operationId:guid}/deactivate")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]

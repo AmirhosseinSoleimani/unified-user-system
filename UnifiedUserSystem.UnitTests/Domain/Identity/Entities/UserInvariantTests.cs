@@ -448,6 +448,127 @@ namespace UnifiedUserSystem.UnitTests.Domain.Identity.Entities
             Assert.Equal(t3, user.UpdatedAt);
         }
 
+        [Fact]
+        public void ChangeUsername_ShouldTrim_AndUpdateAudit()
+        {
+            var t1 = Now();
+            var t2 = t1.AddMinutes(5);
+
+            var user = User.CreateNew("a@b.com", "ali", "Name", "HASH", t1, null);
+
+            user.ChangeUsername(" reza ", t2, user.Id);
+
+            Assert.Equal("reza", user.Username);
+            Assert.Equal(t2, user.UpdatedAt);
+            Assert.Equal(user.Id, user.UpdatedByUserId);
+        }
+
+        [Fact]
+        public void ChangeUsername_WhenSameValue_ShouldNotTouch()
+        {
+            var t1 = Now();
+            var t2 = t1.AddMinutes(5);
+
+            var user = User.CreateNew("a@b.com", "ali", "Name", "HASH", t1, null);
+            var before = user.UpdatedAt;
+
+            user.ChangeUsername(" ali ", t2, Guid.NewGuid());
+
+            Assert.Equal("ali", user.Username);
+            Assert.Equal(before, user.UpdatedAt);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(" ")]
+        [InlineData("ab")]
+        [InlineData("1ali")]
+        [InlineData("ali-xx")]
+        [InlineData("ali..xx")]
+        public void ChangeUsername_WhenInvalid_ShouldThrow(string username)
+        {
+            var user = User.CreateNew("a@b.com", "ali", "Name", "HASH", Now(), null);
+
+            var ex = Assert.Throws<DomainException>(() =>
+                user.ChangeUsername(username, Now().AddMinutes(1), user.Id));
+
+            Assert.Contains("username", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void SoftDelete_ShouldMarkDeleted_AndTouch()
+        {
+            var t1 = Now();
+            var t2 = t1.AddMinutes(5);
+
+            var user = User.CreateNew("a@b.com", "ali", "Name", "HASH", t1, null);
+
+            user.SoftDelete(t2, user.Id);
+
+            Assert.True(user.IsDeleted);
+            Assert.Equal(t2, user.DeletedAt);
+            Assert.Equal(user.Id, user.DeletedByUserId);
+            Assert.Equal(t2, user.UpdatedAt);
+            Assert.Equal(user.Id, user.UpdatedByUserId);
+        }
+
+        [Fact]
+        public void SoftDelete_WhenAlreadyDeleted_ShouldBeNoOp()
+        {
+            var t1 = Now();
+            var t2 = t1.AddMinutes(5);
+            var t3 = t2.AddMinutes(5);
+
+            var user = User.CreateNew("a@b.com", "ali", "Name", "HASH", t1, null);
+
+            user.SoftDelete(t2, user.Id);
+
+            var deletedAt = user.DeletedAt;
+            var deletedBy = user.DeletedByUserId;
+            var updatedAt = user.UpdatedAt;
+
+            user.SoftDelete(t3, Guid.NewGuid());
+
+            Assert.True(user.IsDeleted);
+            Assert.Equal(deletedAt, user.DeletedAt);
+            Assert.Equal(deletedBy, user.DeletedByUserId);
+            Assert.Equal(updatedAt, user.UpdatedAt);
+        }
+
+        [Fact]
+        public void Restore_ShouldClearDeletedFields_AndTouch()
+        {
+            var t1 = Now();
+            var t2 = t1.AddMinutes(5);
+            var t3 = t2.AddMinutes(5);
+
+            var user = User.CreateNew("a@b.com", "ali", "Name", "HASH", t1, null);
+
+            user.SoftDelete(t2, user.Id);
+            user.Restore(t3, user.Id);
+
+            Assert.False(user.IsDeleted);
+            Assert.Null(user.DeletedAt);
+            Assert.Null(user.DeletedByUserId);
+            Assert.Equal(t3, user.UpdatedAt);
+            Assert.Equal(user.Id, user.UpdatedByUserId);
+        }
+
+        [Fact]
+        public void Restore_WhenNotDeleted_ShouldBeNoOp()
+        {
+            var t1 = Now();
+            var t2 = t1.AddMinutes(5);
+
+            var user = User.CreateNew("a@b.com", "ali", "Name", "HASH", t1, null);
+            var before = user.UpdatedAt;
+
+            user.Restore(t2, Guid.NewGuid());
+
+            Assert.False(user.IsDeleted);
+            Assert.Equal(before, user.UpdatedAt);
+        }
+
 
     }
 }

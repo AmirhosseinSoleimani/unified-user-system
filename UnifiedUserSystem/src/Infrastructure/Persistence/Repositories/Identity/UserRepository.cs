@@ -27,6 +27,7 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
         }
         public async Task<User?> FindEmailOrUsernameAsync(string keyLower)
         {
+            keyLower = (keyLower ?? string.Empty).Trim().ToLowerInvariant();
             return await _db.Users
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
