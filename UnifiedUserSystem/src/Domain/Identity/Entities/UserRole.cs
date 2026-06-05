@@ -13,7 +13,7 @@ namespace UnifiedUserSystem.src.Domain.Identity.Entities
         public static UserRole Create(Guid userId, int roleId, DateTimeOffset nowUtc, Guid? actorUserId)
         {
             Guard.True(userId != Guid.Empty, "UserId is invalid.");
-            Guard.True(roleId > 0, "RoleId is isvalid.");
+            Guard.True(roleId > 0, "RoleId is invalid.");
 
             var userRole = new UserRole
             {

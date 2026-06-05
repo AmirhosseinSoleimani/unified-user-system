@@ -1,137 +1,339 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Moq;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Authorization;
-using UnifiedUserSystem.src.Infrastructure.Time;
-using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
+using UnifiedUserSystem.UnitTests.Infrastructure.TestSupport;
 
-namespace UnifiedUserSystem.UnitTests.Infrastructure.Persistence.Repositories.Authorization
+namespace UnifiedUserSystem.UnitTests.Infrastructure.Persistence.Repositories.Authorization;
+
+public class EfPermissionReadRepositoryTests
 {
-    public class EfPermissionReadRepositoryTests
+    private static readonly DateTimeOffset T1 = new(2026, 02, 17, 10, 00, 00, TimeSpan.Zero);
+    private static readonly DateTimeOffset T2 = new(2026, 02, 17, 10, 10, 00, TimeSpan.Zero);
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnTrue_When_UserHasRoleWithOperation()
     {
-        [Fact]
-        public async Task EfPermissionReadRepository_UserHasOperationAsync_WhenUserHasRoleWithOperation_ShouldReturnTrue()
-        {
-            await using var db = CreateDbContext();
-            var seed = await SeedUserRoleOperationAsync(db, "users.read");
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
 
-            var sut = new EfPermissionReadRepository(db);
+        var sut = new EfPermissionReadRepository(db);
 
-            var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
 
-            result.Should().BeTrue();
-        }
+        result.Should().BeTrue();
+    }
 
-        [Fact]
-        public async Task EfPermissionReadRepository_UserHasOperationAsync_WhenUserDoesNotHaveOperation_ShouldReturnFalse()
-        {
-            await using var db = CreateDbContext();
-            var seed = await SeedUserRoleOperationAsync(db, "users.read");
+    [Fact]
+    public async Task UserHasOperationAsync_Should_NormalizeOperationPolicyPrefixAndCase()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
 
-            var sut = new EfPermissionReadRepository(db);
+        var sut = new EfPermissionReadRepository(db);
 
-            var result = await sut.UserHasOperationAsync(seed.User.Id, "role.read");
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "OP:USERS.READ");
 
-            result.Should().BeFalse();
-        }
+        result.Should().BeTrue();
+    }
 
-        [Fact]
-        public async Task EfPermissionReadRepository_UserHasOperationAsync_WhenUserHasMultipleRoles_ShouldReturnTrueIfAnyRoleAllows()
-        {
-            await using var db = CreateDbContext();
-            var now = DateTimeOffset.UtcNow;
-            var actorUserId = Guid.NewGuid();
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_UserIdIsEmpty()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        await SeedUserRoleOperationAsync(db, "users.read");
 
-            var user = User.CreateNew("user@example.com", "user123", "Test User", "hashed-password", now, actorUserId);
-            var roleWithoutPermission = Role.Create("viewer", "Viewer", now, actorUserId);
-            var roleWithPermission = Role.Create("admin", "Admin", now, actorUserId);
-            var operation = Operation.Create("operation.read", "Read Operations", now, actorUserId);
+        var sut = new EfPermissionReadRepository(db);
 
-            db.Users.Add(user);
-            db.Roles.AddRange(roleWithoutPermission, roleWithPermission);
-            db.Operation.Add(operation);
-            await db.SaveChangesAsync();
+        var result = await sut.UserHasOperationAsync(Guid.Empty, "users.read");
 
-            db.UserRoles.Add(UserRole.Create(user.Id, roleWithoutPermission.Id, now, actorUserId));
-            db.UserRoles.Add(UserRole.Create(user.Id, roleWithPermission.Id, now, actorUserId));
-            db.RoleOperations.Add(RoleOperation.Create(roleWithPermission.Id, operation.Id, now, actorUserId));
-            await db.SaveChangesAsync();
+        result.Should().BeFalse();
+    }
 
-            var sut = new EfPermissionReadRepository(db);
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_OperationKeyIsEmpty(string? operationKey)
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
 
-            var result = await sut.UserHasOperationAsync(user.Id, "operation.read");
+        var sut = new EfPermissionReadRepository(db);
 
-            result.Should().BeTrue();
-        }
+        var result = await sut.UserHasOperationAsync(seed.User.Id, operationKey!);
 
-        [Fact]
-        public async Task EfPermissionReadRepository_UserHasOperationAsync_WhenUserInactive_ShouldReturnFalseIfSupportedByDomain()
-        {
-            await using var db = CreateDbContext();
-            var seed = await SeedUserRoleOperationAsync(db, "users.read");
-            seed.User.Deactive(DateTimeOffset.UtcNow, seed.User.Id);
-            await db.SaveChangesAsync();
+        result.Should().BeFalse();
+    }
 
-            var sut = new EfPermissionReadRepository(db);
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_UserDoesNotExist()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        await SeedUserRoleOperationAsync(db, "users.read");
 
-            var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+        var sut = new EfPermissionReadRepository(db);
 
-            result.Should().BeFalse();
-        }
+        var result = await sut.UserHasOperationAsync(Guid.NewGuid(), "users.read");
 
-        [Fact]
-        public async Task EfPermissionReadRepository_UserHasOperationAsync_WhenOperationMissing_ShouldReturnFalse()
-        {
-            await using var db = CreateDbContext();
-            var user = User.CreateNew("user@example.com", "user123", "Test User", "hashed-password", DateTimeOffset.UtcNow, Guid.NewGuid());
-            db.Users.Add(user);
-            await db.SaveChangesAsync();
+        result.Should().BeFalse();
+    }
 
-            var sut = new EfPermissionReadRepository(db);
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_UserDoesNotHaveRequestedOperation()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
 
-            var result = await sut.UserHasOperationAsync(user.Id, "missing.operation");
+        var sut = new EfPermissionReadRepository(db);
 
-            result.Should().BeFalse();
-        }
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "role.read");
 
-        private static async Task<(User User, Role Role, Operation Operation)> SeedUserRoleOperationAsync(AppDbContext db, string operationKey)
-        {
-            var now = DateTimeOffset.UtcNow;
-            var actorUserId = Guid.NewGuid();
+        result.Should().BeFalse();
+    }
 
-            var user = User.CreateNew("user@example.com", "user123", "Test User", "hashed-password", now, actorUserId);
-            var role = Role.Create("admin", "Admin", now, actorUserId);
-            var operation = Operation.Create(operationKey, "Operation", now, actorUserId);
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnTrue_When_UserHasMultipleRolesAndAnyRoleAllowsOperation()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
 
-            db.Users.Add(user);
-            db.Roles.Add(role);
-            db.Operation.Add(operation);
-            await db.SaveChangesAsync();
+        var user = User.CreateNew("user@example.com", "user123", "Test User", "hash", T1, null);
+        var viewer = Role.Create("viewer", "Viewer", T1, null);
+        var admin = Role.Create("admin", "Admin", T1, null);
+        var operation = Operation.Create("operation.read", "Read Operations", T1, null);
 
-            db.UserRoles.Add(UserRole.Create(user.Id, role.Id, now, actorUserId));
-            db.RoleOperations.Add(RoleOperation.Create(role.Id, operation.Id, now, actorUserId));
-            await db.SaveChangesAsync();
+        db.Users.Add(user);
+        db.Roles.AddRange(viewer, admin);
+        db.Operation.Add(operation);
+        await db.SaveChangesAsync();
 
-            return (user, role, operation);
-        }
+        db.UserRoles.AddRange(
+            UserRole.Create(user.Id, viewer.Id, T1, null),
+            UserRole.Create(user.Id, admin.Id, T1, null));
 
-        private static AppDbContext CreateDbContext()
-        {
-            var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
+        db.RoleOperations.Add(RoleOperation.Create(admin.Id, operation.Id, T1, null));
+        await db.SaveChangesAsync();
 
-            var currentUser = new Mock<ICurrentUser>();
-            currentUser.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
-            currentUser.SetupGet(x => x.IsAuthenticated).Returns(true);
+        var sut = new EfPermissionReadRepository(db);
 
-            var clock = new Mock<IClock>();
-            clock.SetupGet(x => x.Utcnow).Returns(DateTimeOffset.UtcNow);
+        var result = await sut.UserHasOperationAsync(user.Id, "operation.read");
 
-            return new AppDbContext(options, currentUser.Object, clock.Object);
-        }
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_UserIsInactive()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
+
+        seed.User.Deactive(T2, seed.User.Id);
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_RoleIsInactive()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
+
+        seed.Role.Deactivate(T2, seed.User.Id);
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_OperationIsInactive()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
+
+        seed.Operation.Deactive(T2, seed.User.Id);
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_UserIsSoftDeleted()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
+
+        seed.User.SoftDelete(T2, seed.User.Id);
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_RoleIsSoftDeleted()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
+
+        seed.Role.Delete(T2, seed.User.Id);
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_OperationIsSoftDeleted()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var seed = await SeedUserRoleOperationAsync(db, "users.read");
+
+        seed.Operation.Delete(T2, seed.User.Id);
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(seed.User.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_UserHasRoleButRoleHasNoOperations()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+
+        var user = User.CreateNew("user@example.com", "user123", "Test User", "hash", T1, null);
+        var role = Role.Create("admin", "Admin", T1, null);
+
+        db.Users.Add(user);
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        db.UserRoles.Add(UserRole.Create(user.Id, role.Id, T1, null));
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(user.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UserHasOperationAsync_Should_ReturnFalse_When_RoleHasOperationButUserDoesNotHaveRole()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+
+        var user = User.CreateNew("user@example.com", "user123", "Test User", "hash", T1, null);
+        var role = Role.Create("admin", "Admin", T1, null);
+        var operation = Operation.Create("users.read", "Read users", T1, null);
+
+        db.Users.Add(user);
+        db.Roles.Add(role);
+        db.Operation.Add(operation);
+        await db.SaveChangesAsync();
+
+        db.RoleOperations.Add(RoleOperation.Create(role.Id, operation.Id, T1, null));
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.UserHasOperationAsync(user.Id, "users.read");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ListUserIdsInRoleAsync_Should_ReturnDistinctUserIds_When_RoleHasUsers()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+
+        var role = Role.Create("admin", "Admin", T1, null);
+        var user1 = User.CreateNew("u1@example.com", "userone", "User One", "hash", T1, null);
+        var user2 = User.CreateNew("u2@example.com", "usertwo", "User Two", "hash", T1, null);
+
+        db.Roles.Add(role);
+        db.Users.AddRange(user1, user2);
+        await db.SaveChangesAsync();
+
+        db.UserRoles.AddRange(
+            UserRole.Create(user1.Id, role.Id, T1, null),
+            UserRole.Create(user2.Id, role.Id, T1, null));
+
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.ListUserIdsInRoleAsync(role.Id);
+
+        result.Should().BeEquivalentTo(new[] { user1.Id, user2.Id });
+    }
+
+    [Fact]
+    public async Task ListUserIdsInRoleAsync_Should_ReturnEmptyList_When_RoleIdIsInvalid()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.ListUserIdsInRoleAsync(0);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ListUserIdsInRoleAsync_Should_ReturnEmptyList_When_RoleHasNoUsers()
+    {
+        await using var db = InfrastructureDbContextFactory.Create();
+
+        var role = Role.Create("admin", "Admin", T1, null);
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var sut = new EfPermissionReadRepository(db);
+
+        var result = await sut.ListUserIdsInRoleAsync(role.Id);
+
+        result.Should().BeEmpty();
+    }
+
+    private static async Task<(User User, Role Role, Operation Operation)> SeedUserRoleOperationAsync(
+        UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.AppDbContext db,
+        string operationKey)
+    {
+        var user = User.CreateNew("user@example.com", "user123", "Test User", "hashed-password", T1, null);
+        var role = Role.Create("admin", "Admin", T1, null);
+        var operation = Operation.Create(operationKey, "Operation", T1, null);
+
+        db.Users.Add(user);
+        db.Roles.Add(role);
+        db.Operation.Add(operation);
+        await db.SaveChangesAsync();
+
+        db.UserRoles.Add(UserRole.Create(user.Id, role.Id, T1, null));
+        db.RoleOperations.Add(RoleOperation.Create(role.Id, operation.Id, T1, null));
+        await db.SaveChangesAsync();
+
+        return (user, role, operation);
     }
 }

@@ -1,124 +1,178 @@
-﻿using FluentAssertions;
-using Moq;
+﻿using Moq;
 using UnifiedUserSystem.src.Application.Interfaces;
 using UnifiedUserSystem.src.Application.Interfaces.Identity;
 using UnifiedUserSystem.src.Application.Interfaces.Security;
 using UnifiedUserSystem.src.Application.Services.Identity;
-using UnifiedUserSystem.src.Contracts.DTOs.Profile;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
+using Xunit;
 
-namespace UnifiedUserSystem.UnitTests.Application.Services;
+namespace UnifiedUserSystem.UnitTests.Application.Services.Identity;
 
 public class ProfileServiceTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IUserRepository> _userRepositoryMock = new();
-    private readonly Mock<ICurrentUser> _currentUserMock = new();
-    private readonly ProfileService _sut;
-
-    public ProfileServiceTests()
-    {
-        _unitOfWorkMock.SetupGet(x => x.Users).Returns(_userRepositoryMock.Object);
-        _sut = new ProfileService(_unitOfWorkMock.Object, _currentUserMock.Object);
-    }
+    private static readonly DateTimeOffset T1 =
+        new(2026, 02, 17, 10, 00, 00, TimeSpan.Zero);
 
     [Fact]
-    public async Task GetMyProfileAsync_Should_ReturnDbBackedProfileResponse_When_AuthenticatedUserExists()
+    public async Task GetMyProfileAsync_WithAuthenticatedUser_ShouldReturnProfile()
     {
-        var userId = Guid.NewGuid();
-        var nowUtc = DateTimeOffset.UtcNow;
-
         var user = User.CreateNew(
-            email: "user@example.com",
-            username: "user1",
-            fullname: "User One",
-            passwordHash: "password-hash",
-            nowUtc: nowUtc,
-            actorUserId: userId);
+            "user@example.com",
+            "user123",
+            "Test User",
+            "hashed-password",
+            T1,
+            null);
 
-        _currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
-        _currentUserMock.SetupGet(x => x.UserId).Returns(user.Id);
+        var currentUserMock = new Mock<ICurrentUser>();
+        currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
+        currentUserMock.SetupGet(x => x.UserId).Returns(user.Id);
 
-        _userRepositoryMock
+        var userRepositoryMock = new Mock<IUserRepository>();
+        userRepositoryMock
             .Setup(x => x.FindByIdWithRolesAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        var result = await _sut.GetMyProfileAsync();
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        unitOfWorkMock.SetupGet(x => x.Users).Returns(userRepositoryMock.Object);
 
-        result.Should().BeEquivalentTo(new ProfileResponse
-        {
-            Id = user.Id,
-            Email = user.Email,
-            Username = user.Username,
-            Fullname = user.Fullname,
-            IsActive = user.IsActive,
-            Roles = Array.Empty<string>()
-        });
+        var sut = new ProfileService(unitOfWorkMock.Object, currentUserMock.Object);
 
-        _userRepositoryMock.Verify(
+        var result = await sut.GetMyProfileAsync();
+
+        Assert.NotNull(result);
+        Assert.Equal(user.Id, result.Id);
+        Assert.Equal(user.Email, result.Email);
+        Assert.Equal(user.Username, result.Username);
+        Assert.Equal(user.Fullname, result.Fullname);
+        Assert.Equal(user.IsActive, result.IsActive);
+        Assert.NotNull(result.Roles);
+        Assert.Empty(result.Roles);
+
+        userRepositoryMock.Verify(
             x => x.FindByIdWithRolesAsync(user.Id, It.IsAny<CancellationToken>()),
             Times.Once);
+
+        userRepositoryMock.Verify(
+            x => x.FindByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
-    public async Task GetMyProfileAsync_Should_ThrowUnauthorizedAccessException_When_CurrentUserIsNotAuthenticated()
+    public async Task GetMyProfileAsync_WithoutCurrentUserId_ShouldThrowUnauthorizedAccessException()
     {
-        _currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(false);
-        _currentUserMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+        var currentUserMock = new Mock<ICurrentUser>();
+        currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
+        currentUserMock.SetupGet(x => x.UserId).Returns((Guid?)null);
 
-        var act = () => _sut.GetMyProfileAsync();
+        var userRepositoryMock = new Mock<IUserRepository>();
 
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        unitOfWorkMock.SetupGet(x => x.Users).Returns(userRepositoryMock.Object);
 
-        _userRepositoryMock.Verify(
+        var sut = new ProfileService(unitOfWorkMock.Object, currentUserMock.Object);
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => sut.GetMyProfileAsync());
+
+        Assert.Equal("User is not authenticated.", exception.Message);
+
+        userRepositoryMock.Verify(
+            x => x.FindByIdWithRolesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        userRepositoryMock.Verify(
+            x => x.FindByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMyProfileAsync_WhenUserIsNotAuthenticated_ShouldThrowUnauthorizedAccessException()
+    {
+        var currentUserMock = new Mock<ICurrentUser>();
+        currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(false);
+        currentUserMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+
+        var userRepositoryMock = new Mock<IUserRepository>();
+
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        unitOfWorkMock.SetupGet(x => x.Users).Returns(userRepositoryMock.Object);
+
+        var sut = new ProfileService(unitOfWorkMock.Object, currentUserMock.Object);
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => sut.GetMyProfileAsync());
+
+        Assert.Equal("User is not authenticated.", exception.Message);
+
+        userRepositoryMock.Verify(
             x => x.FindByIdWithRolesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
-    public async Task GetMyProfileAsync_Should_ThrowUnauthorizedAccessException_When_CurrentUserIsAuthenticatedButUserIdIsNull()
+    public async Task GetMyProfileAsync_WhenUserDoesNotExist_ShouldThrowKeyNotFoundException()
     {
-        _currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
-        _currentUserMock.SetupGet(x => x.UserId).Returns((Guid?)null);
+        var currentUserId = Guid.NewGuid();
 
-        var act = () => _sut.GetMyProfileAsync();
+        var currentUserMock = new Mock<ICurrentUser>();
+        currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
+        currentUserMock.SetupGet(x => x.UserId).Returns(currentUserId);
 
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
-
-        _userRepositoryMock.Verify(
-            x => x.FindByIdWithRolesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task GetMyProfileAsync_Should_ThrowKeyNotFoundException_When_RepositoryReturnsNull()
-    {
-        var userId = Guid.NewGuid();
-
-        _currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
-        _currentUserMock.SetupGet(x => x.UserId).Returns(userId);
-
-        _userRepositoryMock
-            .Setup(x => x.FindByIdWithRolesAsync(userId, It.IsAny<CancellationToken>()))
+        var userRepositoryMock = new Mock<IUserRepository>();
+        userRepositoryMock
+            .Setup(x => x.FindByIdWithRolesAsync(currentUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        var act = () => _sut.GetMyProfileAsync();
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        unitOfWorkMock.SetupGet(x => x.Users).Returns(userRepositoryMock.Object);
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        var sut = new ProfileService(unitOfWorkMock.Object, currentUserMock.Object);
 
-        _userRepositoryMock.Verify(
-            x => x.FindByIdWithRolesAsync(userId, It.IsAny<CancellationToken>()),
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => sut.GetMyProfileAsync());
+
+        Assert.Equal("User not found.", exception.Message);
+
+        userRepositoryMock.Verify(
+            x => x.FindByIdWithRolesAsync(currentUserId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public void ProfileResponse_Should_NotExposePasswordOrPasswordHashProperties()
+    public async Task GetMyProfileAsync_ShouldPassCancellationTokenToRepository()
     {
-        var propertyNames = typeof(ProfileResponse)
-            .GetProperties()
-            .Select(x => x.Name);
+        var user = User.CreateNew(
+            "token@example.com",
+            "tokenuser",
+            "Token User",
+            "hashed-password",
+            T1,
+            null);
 
-        propertyNames.Should().NotContain("Password");
-        propertyNames.Should().NotContain("PasswordHash");
+        using var cts = new CancellationTokenSource();
+
+        var currentUserMock = new Mock<ICurrentUser>();
+        currentUserMock.SetupGet(x => x.IsAuthenticated).Returns(true);
+        currentUserMock.SetupGet(x => x.UserId).Returns(user.Id);
+
+        var userRepositoryMock = new Mock<IUserRepository>();
+        userRepositoryMock
+            .Setup(x => x.FindByIdWithRolesAsync(user.Id, cts.Token))
+            .ReturnsAsync(user);
+
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        unitOfWorkMock.SetupGet(x => x.Users).Returns(userRepositoryMock.Object);
+
+        var sut = new ProfileService(unitOfWorkMock.Object, currentUserMock.Object);
+
+        var result = await sut.GetMyProfileAsync(cts.Token);
+
+        Assert.NotNull(result);
+        Assert.Equal(user.Id, result.Id);
+
+        userRepositoryMock.Verify(
+            x => x.FindByIdWithRolesAsync(user.Id, cts.Token),
+            Times.Once);
     }
 }

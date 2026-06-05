@@ -40,7 +40,7 @@
 
             IsDeleted = false;
             DeletedAt = null;
-            DeletedByUserId = actorUserId;
+            DeletedByUserId = null;
 
             Touch(nowUtc, actorUserId);
         }
