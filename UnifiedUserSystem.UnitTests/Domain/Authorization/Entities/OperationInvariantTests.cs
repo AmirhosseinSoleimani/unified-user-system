@@ -162,60 +162,60 @@ namespace UnifiedUserSystem.UnitTests.Domain.Authorization.Entities
         [Fact]
         public void Deactive_ShouldSetInactive_AndTouch()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
             var actor = Guid.NewGuid();
 
-            op.Deactive(T2, actor);
+            operation.Deactivate(T2, actor);
 
-            Assert.False(op.IsActive);
-            Assert.Equal(T2, op.UpdatedAt);
-            Assert.Equal(actor, op.UpdatedByUserId);
+            Assert.False(operation.IsActive);
+            Assert.Equal(T2, operation.UpdatedAt);
+            Assert.Equal(actor, operation.UpdatedByUserId);
         }
 
         [Fact]
         public void Deactive_WhenAlreadyInactive_ShouldBeNoOp()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
 
-            op.Deactive(T2, Guid.NewGuid());
+            operation.Deactivate(T2, Guid.NewGuid());
 
-            var updatedAt = op.UpdatedAt;
-            var updatedBy = op.UpdatedByUserId;
+            var updatedAt = operation.UpdatedAt;
+            var updatedBy = operation.UpdatedByUserId;
 
-            op.Deactive(T3, Guid.NewGuid());
+            operation.Deactivate(T3, Guid.NewGuid());
 
-            Assert.False(op.IsActive);
-            Assert.Equal(updatedAt, op.UpdatedAt);
-            Assert.Equal(updatedBy, op.UpdatedByUserId);
+            Assert.False(operation.IsActive);
+            Assert.Equal(updatedAt, operation.UpdatedAt);
+            Assert.Equal(updatedBy, operation.UpdatedByUserId);
         }
 
         [Fact]
         public void Active_ShouldSetActive_AndTouch()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
             var actor = Guid.NewGuid();
 
-            op.Deactive(T2, actor);
-            op.Active(T3, actor);
+            operation.Deactivate(T2, actor);
+            operation.Activate(T3, actor);
 
-            Assert.True(op.IsActive);
-            Assert.Equal(T3, op.UpdatedAt);
-            Assert.Equal(actor, op.UpdatedByUserId);
+            Assert.True(operation.IsActive);
+            Assert.Equal(T3, operation.UpdatedAt);
+            Assert.Equal(actor, operation.UpdatedByUserId);
         }
 
         [Fact]
         public void Active_WhenAlreadyActive_ShouldBeNoOp()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
 
-            var updatedAt = op.UpdatedAt;
-            var updatedBy = op.UpdatedByUserId;
+            var updatedAt = operation.UpdatedAt;
+            var updatedBy = operation.UpdatedByUserId;
 
-            op.Active(T2, Guid.NewGuid());
+            operation.Activate(T2, Guid.NewGuid());
 
-            Assert.True(op.IsActive);
-            Assert.Equal(updatedAt, op.UpdatedAt);
-            Assert.Equal(updatedBy, op.UpdatedByUserId);
+            Assert.True(operation.IsActive);
+            Assert.Equal(updatedAt, operation.UpdatedAt);
+            Assert.Equal(updatedBy, operation.UpdatedByUserId);
         }
 
         [Fact]

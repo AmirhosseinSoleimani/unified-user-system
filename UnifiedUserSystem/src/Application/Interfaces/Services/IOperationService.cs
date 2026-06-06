@@ -11,7 +11,6 @@ namespace UnifiedUserSystem.src.Application.Interfaces.Services
         Task DeleteOperationAsync(Guid operationId, CancellationToken ct = default);
         Task RenameOperationTitleAsync(Guid operationId, string newTitle, CancellationToken ct = default);
         Task ChangeOperationKeyAsync(Guid operationId, string newKey, CancellationToken ct = default);
-        Task ActivateOperatioAsync(Guid operationId, CancellationToken ct = default);
         Task ActivateOperationAsync(Guid operationId, CancellationToken ct = default);
         Task DeactivateOperationAsync(Guid operationId, CancellationToken ct = default);
     }
