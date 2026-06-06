@@ -259,5 +259,49 @@ namespace UnifiedUserSystem.UnitTests.Domain.Authorization.Entities
             Assert.Equal("", Operation.NormalizeTitle(null!));
             Assert.Equal("Read Users", Operation.NormalizeTitle(" Read Users "));
         }
+
+        [Fact]
+        public void RenameTitle_ShouldUseNormalizeTitle_NotNormalizeKey()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            operation.RenameTitle(" Manage Users ", T2, actorUserId: null);
+
+            Assert.Equal("Manage Users", operation.Title);
+            Assert.NotEqual("manage.users", operation.Title);
+            Assert.NotEqual("manage users", operation.Title);
+        }
+
+        [Fact]
+        public void RenameTitle_WithEmptyTitle_ShouldThrowDomainException()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            var ex = Assert.Throws<DomainException>(() =>
+                operation.RenameTitle("   ", T2, actorUserId: null));
+
+            Assert.Contains("title", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void ChangeKey_ShouldStillUseNormalizeKey()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            operation.ChangeKey(" USERS.UPDATE ", T2, actorUserId: null);
+
+            Assert.Equal("users.update", operation.Key);
+        }
+
+        [Fact]
+        public void ChangeKey_WithEmptyKey_ShouldThrowDomainException()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            var ex = Assert.Throws<DomainException>(() =>
+                operation.ChangeKey("   ", T2, actorUserId: null));
+
+            Assert.Contains("key", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

@@ -109,7 +109,13 @@ namespace UnifiedUserSystem.src.Application.Services
             await _uow.SaveChangesAsync(ct);
 
             var accessToken = _jwt.CreateAccessToken(user);
-            return BuildAuthResponse(user, accessToken, refreshToken, refreshSession.ExpiresAtUtc);
+            return BuildAuthResponse(
+                user,
+                accessToken,
+                refreshToken,
+                refreshSession.ExpiresAtUtc,
+                fallbackRoles: new[] { role.Name }
+                );
         }
 
         public async Task<AuthResponse?> LoginAsync(LoginRequest req, CancellationToken ct = default)
@@ -259,7 +265,9 @@ namespace UnifiedUserSystem.src.Application.Services
             User user,
             string accessToken,
             string refreshToken,
-            DateTimeOffset refreshTokenExpiresAtUtc)
+            DateTimeOffset refreshTokenExpiresAtUtc,
+            string[]? fallbackRoles = null
+            )
         {
             var roles = user.UserRoles
                 .Select(x => x.Role?.Name)
@@ -267,6 +275,9 @@ namespace UnifiedUserSystem.src.Application.Services
                 .Distinct()
                 .Cast<string>()
                 .ToArray();
+
+            if (roles.Length == 0 && fallbackRoles is { Length: > 0 })
+                roles = fallbackRoles;
 
             if (roles.Length == 0)
                 roles = new[] { "user" };

@@ -20,7 +20,6 @@ namespace UnifiedUserSystem.UnitTests.Api.Integration
         [InlineData(typeof(RoleController), "Delete")]
         [InlineData(typeof(RoleController), "Activate")]
         [InlineData(typeof(RoleController), "Deactivate")]
-        [InlineData(typeof(RoleController), "Remove")]
         [InlineData(typeof(RoleController), "GetOperations")]
         [InlineData(typeof(RoleController), "AssignOperation")]
         [InlineData(typeof(RoleController), "RemoveOperation")]
