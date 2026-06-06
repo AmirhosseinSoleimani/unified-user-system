@@ -56,12 +56,13 @@ namespace UnifiedUserSystem.src.Application.Services
             if (exists is not null)
                 throw new InvalidOperationException("Operation key already exists.");
 
-            var op = Operation.Create(key, title, _clock.Utcnow, _currentUser.UserId);
+            var operation = Operation.Create(key, title, _clock.Utcnow, _currentUser.UserId);
 
-            _uow.Operations.Add(op);
+            _uow.Operations.Add(operation);
             await _uow.SaveChangesAsync(ct);
-            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
-            return op;
+
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(operation.Key, ct);
+            return operation;
         }
 
         public async Task<Operation> UpdateOperationAsync(Guid operationId, string key, string title, CancellationToken ct = default)
@@ -111,19 +112,15 @@ namespace UnifiedUserSystem.src.Application.Services
             await _permissionCacheInvalidator.InvalidateForOperationAsync(operationKey, ct);
         }
 
-        public async Task ActivateOperatioAsync(Guid operationId, CancellationToken ct = default)
-        {
-            await ActivateOperationAsync(operationId, ct);
-        }
-
         public async Task ActivateOperationAsync(Guid operationId, CancellationToken ct = default)
         {
-            var op = await _uow.Operations.FindByIdAsync(operationId, ct)
+            var operation = await _uow.Operations.FindByIdAsync(operationId, ct)
                 ?? throw new InvalidOperationException("Operation not found.");
 
-            op.Active(_clock.Utcnow, _currentUser.UserId);
+            operation.Activate(_clock.Utcnow, _currentUser.UserId);
+
             await _uow.SaveChangesAsync(ct);
-            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(operation.Key, ct);
         }
 
         public async Task ChangeOperationKeyAsync(Guid operationId, string newKey, CancellationToken ct = default)
@@ -134,32 +131,35 @@ namespace UnifiedUserSystem.src.Application.Services
             if (exists is not null && exists.Id != operationId)
                 throw new InvalidOperationException("Operation key already exists.");
 
-            var op = await _uow.Operations.FindByIdAsync(operationId, ct)
+            var operation = await _uow.Operations.FindByIdAsync(operationId, ct)
                 ?? throw new InvalidOperationException("Operation not found.");
-            var oldKey = op.Key;
 
-            op.ChangeKey(newKey, _clock.Utcnow, _currentUser.UserId);
+            var oldKey = operation.Key;
+
+            operation.ChangeKey(newKey, _clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
+
             await _permissionCacheInvalidator.InvalidateForOperationAsync(oldKey, ct);
-            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(operation.Key, ct);
         }
 
         public async Task DeactivateOperationAsync(Guid operationId, CancellationToken ct = default)
         {
-            var op = await _uow.Operations.FindByIdAsync(operationId, ct)
+            var operation = await _uow.Operations.FindByIdAsync(operationId, ct)
                 ?? throw new InvalidOperationException("Operation not found.");
 
-            op.Deactive(_clock.Utcnow, _currentUser.UserId);
+            operation.Deactivate(_clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
-            await _permissionCacheInvalidator.InvalidateForOperationAsync(op.Key, ct);
+
+            await _permissionCacheInvalidator.InvalidateForOperationAsync(operation.Key, ct);
         }
 
         public async Task RenameOperationTitleAsync(Guid operationId, string newTitle, CancellationToken ct = default)
         {
-            var op = await _uow.Operations.FindByIdAsync(operationId, ct)
+            var operation = await _uow.Operations.FindByIdAsync(operationId, ct)
                 ?? throw new InvalidOperationException("Operation not found.");
 
-            op.RenameTitle(newTitle, _clock.Utcnow, _currentUser.UserId);
+            operation.RenameTitle(newTitle, _clock.Utcnow, _currentUser.UserId);
             await _uow.SaveChangesAsync(ct);
         }
     }

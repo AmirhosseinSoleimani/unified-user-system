@@ -162,60 +162,60 @@ namespace UnifiedUserSystem.UnitTests.Domain.Authorization.Entities
         [Fact]
         public void Deactive_ShouldSetInactive_AndTouch()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
             var actor = Guid.NewGuid();
 
-            op.Deactive(T2, actor);
+            operation.Deactivate(T2, actor);
 
-            Assert.False(op.IsActive);
-            Assert.Equal(T2, op.UpdatedAt);
-            Assert.Equal(actor, op.UpdatedByUserId);
+            Assert.False(operation.IsActive);
+            Assert.Equal(T2, operation.UpdatedAt);
+            Assert.Equal(actor, operation.UpdatedByUserId);
         }
 
         [Fact]
         public void Deactive_WhenAlreadyInactive_ShouldBeNoOp()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
 
-            op.Deactive(T2, Guid.NewGuid());
+            operation.Deactivate(T2, Guid.NewGuid());
 
-            var updatedAt = op.UpdatedAt;
-            var updatedBy = op.UpdatedByUserId;
+            var updatedAt = operation.UpdatedAt;
+            var updatedBy = operation.UpdatedByUserId;
 
-            op.Deactive(T3, Guid.NewGuid());
+            operation.Deactivate(T3, Guid.NewGuid());
 
-            Assert.False(op.IsActive);
-            Assert.Equal(updatedAt, op.UpdatedAt);
-            Assert.Equal(updatedBy, op.UpdatedByUserId);
+            Assert.False(operation.IsActive);
+            Assert.Equal(updatedAt, operation.UpdatedAt);
+            Assert.Equal(updatedBy, operation.UpdatedByUserId);
         }
 
         [Fact]
         public void Active_ShouldSetActive_AndTouch()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
             var actor = Guid.NewGuid();
 
-            op.Deactive(T2, actor);
-            op.Active(T3, actor);
+            operation.Deactivate(T2, actor);
+            operation.Activate(T3, actor);
 
-            Assert.True(op.IsActive);
-            Assert.Equal(T3, op.UpdatedAt);
-            Assert.Equal(actor, op.UpdatedByUserId);
+            Assert.True(operation.IsActive);
+            Assert.Equal(T3, operation.UpdatedAt);
+            Assert.Equal(actor, operation.UpdatedByUserId);
         }
 
         [Fact]
         public void Active_WhenAlreadyActive_ShouldBeNoOp()
         {
-            var op = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
+            var operation = Operation.Create("users.read", "Read Users", T1, Guid.NewGuid());
 
-            var updatedAt = op.UpdatedAt;
-            var updatedBy = op.UpdatedByUserId;
+            var updatedAt = operation.UpdatedAt;
+            var updatedBy = operation.UpdatedByUserId;
 
-            op.Active(T2, Guid.NewGuid());
+            operation.Activate(T2, Guid.NewGuid());
 
-            Assert.True(op.IsActive);
-            Assert.Equal(updatedAt, op.UpdatedAt);
-            Assert.Equal(updatedBy, op.UpdatedByUserId);
+            Assert.True(operation.IsActive);
+            Assert.Equal(updatedAt, operation.UpdatedAt);
+            Assert.Equal(updatedBy, operation.UpdatedByUserId);
         }
 
         [Fact]
@@ -258,6 +258,50 @@ namespace UnifiedUserSystem.UnitTests.Domain.Authorization.Entities
         {
             Assert.Equal("", Operation.NormalizeTitle(null!));
             Assert.Equal("Read Users", Operation.NormalizeTitle(" Read Users "));
+        }
+
+        [Fact]
+        public void RenameTitle_ShouldUseNormalizeTitle_NotNormalizeKey()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            operation.RenameTitle(" Manage Users ", T2, actorUserId: null);
+
+            Assert.Equal("Manage Users", operation.Title);
+            Assert.NotEqual("manage.users", operation.Title);
+            Assert.NotEqual("manage users", operation.Title);
+        }
+
+        [Fact]
+        public void RenameTitle_WithEmptyTitle_ShouldThrowDomainException()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            var ex = Assert.Throws<DomainException>(() =>
+                operation.RenameTitle("   ", T2, actorUserId: null));
+
+            Assert.Contains("title", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void ChangeKey_ShouldStillUseNormalizeKey()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            operation.ChangeKey(" USERS.UPDATE ", T2, actorUserId: null);
+
+            Assert.Equal("users.update", operation.Key);
+        }
+
+        [Fact]
+        public void ChangeKey_WithEmptyKey_ShouldThrowDomainException()
+        {
+            var operation = Operation.Create("users.read", "Read Users", T1, actoractorUserId: null);
+
+            var ex = Assert.Throws<DomainException>(() =>
+                operation.ChangeKey("   ", T2, actorUserId: null));
+
+            Assert.Contains("key", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

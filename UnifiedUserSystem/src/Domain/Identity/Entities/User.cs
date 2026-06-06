@@ -79,25 +79,47 @@ namespace UnifiedUserSystem.src.Domain.Identity.Entities
             Username = newUsername;
             Touch(nowUtc, actorUserId ?? Id);
         }
-        public void Deactive(DateTimeOffset nowUtc, Guid? actorUserId)
+        public void Deactivate(DateTimeOffset nowUtc, Guid? actorUserId)
         {
             if (!IsActive) return;
             IsActive = false;
             Touch(nowUtc, actorUserId ?? Id);
         }
-        public void Active(DateTimeOffset nowUtc, Guid? actorUserId)
+
+        public void Activate(DateTimeOffset nowUtc, Guid? actorUserId)
         {
             if (IsActive) return;
             IsActive = true;
             Touch(nowUtc, actorUserId ?? Id);
         }
+
+        [Obsolete("Use Deactivate instead.")]
+        public void Deactive(
+            DateTimeOffset nowUtc,
+            Guid? actorUserId)
+        {
+            Deactivate(nowUtc, actorUserId);
+        }
+
+        [Obsolete("Use Activate instead.")]
+        public void Active(
+            DateTimeOffset nowUtc,
+            Guid? actorUserId)
+        {
+            Activate(nowUtc, actorUserId);
+        }
+
         public void AssignRole(int roleId, DateTimeOffset nowUtc, Guid? actorUserId)
         {
             Guard.True(roleId > 0, "RoleId is invalid.");
+
             if (UserRoles.Any(x => x.RoleId == roleId)) return;
+
             UserRoles.Add(UserRole.Create(Id, roleId, nowUtc, actorUserId ?? Id));
+
             Touch(nowUtc, actorUserId ?? Id);
         }
+
         public void RemoveRole(int roleId, DateTimeOffset nowUtc, Guid? actorUserId)
         {
             if (roleId <= 0) throw new DomainException("RoleId is invalid.");

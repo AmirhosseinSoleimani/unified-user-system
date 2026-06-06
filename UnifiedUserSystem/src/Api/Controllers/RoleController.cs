@@ -161,24 +161,6 @@ namespace UnifiedUserSystem.src.Api.Controllers
             return NoContentResponse();
         }
 
-        [Authorize(Policy = OperationPolicyNames.RolesRemove)]
-        [HttpPost("remove")]
-        [EnableRateLimiting("SensitiveAdminRateLimit")]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status204NoContent)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<object>>> Remove([FromBody] AssignRoleRequest req, CancellationToken ct)
-        {
-            if (req is null)
-                throw new DomainException("Request is null.");
-
-            await _roles.RemoveRoleFromUserAsync(req.UserId, req.RoleId, ct);
-
-            return NoContentResponse();
-        }
-
         [Authorize(Policy = OperationPolicyNames.RolesOperationsRead)]
         [HttpGet("{roleId:int}/operations")]
         [EnableRateLimiting("SensitiveAdminRateLimit")]

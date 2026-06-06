@@ -68,7 +68,8 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             var wasActive = user.IsActive;
 
-            user.Deactive(_clock.Utcnow, _currentUser.UserId);
+            user.Deactivate(_clock.Utcnow, _currentUser.UserId);
+
             await _unitOfWork.SaveChangesAsync(ct);
             await _permissionCacheInvalidator.InvalidateForUserAsync(user.Id, ct);
 
