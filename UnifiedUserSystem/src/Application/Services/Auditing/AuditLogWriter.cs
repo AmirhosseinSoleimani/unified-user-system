@@ -35,7 +35,9 @@ namespace UnifiedUserSystem.src.Application.Services.Auditing
             _currentUser = currentUser;
         }
 
-        public async Task WriteAsync(WriteAuditLogRequest request, CancellationToken ct = default)
+        public Task AddAsync(
+           WriteAuditLogRequest request,
+           CancellationToken ct = default)
         {
             if (request is null)
                 throw new DomainException("Audit log request is null.");
@@ -55,7 +57,13 @@ namespace UnifiedUserSystem.src.Application.Services.Auditing
                 _clock.Utcnow);
 
             _unitOfWork.AuditLogs.Add(auditLog);
-            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Task.CompletedTask;
+        }
+
+        public Task WriteAsync(WriteAuditLogRequest request, CancellationToken ct = default)
+        {
+            return AddAsync(request, ct);
         }
 
         private static string? SerializeSanitized(IReadOnlyDictionary<string, object?>? values)

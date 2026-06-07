@@ -70,9 +70,6 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
 
             user.Deactivate(_clock.Utcnow, _currentUser.UserId);
 
-            await _unitOfWork.SaveChangesAsync(ct);
-            await _permissionCacheInvalidator.InvalidateForUserAsync(user.Id, ct);
-
             if (wasActive && !user.IsActive)
             {
                 await _auditLogWriter.WriteAsync(new WriteAuditLogRequest
@@ -92,6 +89,9 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                     }
                 }, ct);
             }
+
+            await _unitOfWork.SaveChangesAsync(ct);
+            await _permissionCacheInvalidator.InvalidateForUserAsync(user.Id, ct);
         }
 
         public async Task<ProfileResponse> UpdateUserAsync(
@@ -167,8 +167,6 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 newValues["PasswordChanged"] = true;
             }
 
-            await _unitOfWork.SaveChangesAsync(ct);
-
             if (oldValues.Count > 0 || newValues.Count > 0)
             {
                 await _auditLogWriter.WriteAsync(new WriteAuditLogRequest
@@ -182,6 +180,8 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                     NewValues = newValues
                 }, ct);
             }
+
+            await _unitOfWork.SaveChangesAsync(ct);
 
             var roles = user.UserRoles
                 .Where(x => x.Role != null)
