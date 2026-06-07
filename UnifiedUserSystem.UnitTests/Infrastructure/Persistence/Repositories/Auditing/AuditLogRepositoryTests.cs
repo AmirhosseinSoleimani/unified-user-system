@@ -194,6 +194,8 @@ public class AuditLogRepositoryTests
             }
         });
 
+        await unitOfWorkMock.Object.SaveChangesAsync(CancellationToken.None);
+
         var persisted = await dbContext.AuditLogs.SingleAsync();
 
         persisted.ActorUserId.Should().Be(currentUserId);
@@ -236,6 +238,8 @@ public class AuditLogRepositoryTests
             Action = "Update"
         });
 
+        await unitOfWorkMock.Object.SaveChangesAsync(CancellationToken.None);
+
         var persisted = await dbContext.AuditLogs.SingleAsync();
 
         persisted.ActorUserId.Should().Be(explicitActorId);
@@ -271,6 +275,8 @@ public class AuditLogRepositoryTests
             OldValues = new Dictionary<string, object?> { ["Password"] = "plain" },
             NewValues = new Dictionary<string, object?> { ["RefreshToken"] = "refresh" }
         });
+
+        await unitOfWorkMock.Object.SaveChangesAsync(CancellationToken.None);
 
         var persisted = await dbContext.AuditLogs.SingleAsync();
 
