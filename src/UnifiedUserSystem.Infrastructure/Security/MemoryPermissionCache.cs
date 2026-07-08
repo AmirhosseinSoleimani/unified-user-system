@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Caching.Memory;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Security;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security

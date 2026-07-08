@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UnifiedUserSystem.src.Api.RateLimiting;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
-using UnifiedUserSystem.src.Application.Interfaces.Services;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 using UnifiedUserSystem.src.Domain.Common;

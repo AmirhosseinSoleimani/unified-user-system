@@ -1,4 +1,4 @@
-﻿using UnifiedUserSystem.src.Application.Interfaces.Auditing;
+﻿using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Domain.Auditing.Entities;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 

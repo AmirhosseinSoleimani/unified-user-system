@@ -1,4 +1,6 @@
-﻿namespace UnifiedUserSystem.src.Infrastructure.Time
+﻿using UnifiedUserSystem.src.Application.Abstractions.Time;
+
+namespace UnifiedUserSystem.src.Infrastructure.Time
 {
     public class SystemClock : IClock
     {

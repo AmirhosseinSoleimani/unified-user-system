@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using UnifiedUserSystem.Application.Abstractions.Persistence;
+using UnifiedUserSystem.src.Application.Abstractions.Persistence;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 

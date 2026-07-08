@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 
 namespace UnifiedUserSystem.src.Api.Controllers

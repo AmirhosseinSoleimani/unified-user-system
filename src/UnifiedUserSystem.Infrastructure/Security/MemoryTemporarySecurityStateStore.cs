@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
-using UnifiedUserSystem.src.Infrastructure.Time;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Time;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security
 {

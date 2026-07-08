@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Domain.Auditing.Entities;
 using UnifiedUserSystem.src.Domain.Authorization.Entities;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
-using UnifiedUserSystem.src.Infrastructure.Time;
 
 namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
 {

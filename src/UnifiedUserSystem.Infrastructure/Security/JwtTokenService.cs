@@ -3,9 +3,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
-using UnifiedUserSystem.src.Infrastructure.Time;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security
 {

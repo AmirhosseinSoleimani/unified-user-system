@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using UnifiedUserSystem.src.Api.RateLimiting;
-using UnifiedUserSystem.src.Application.Interfaces;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Contracts.DTOs.Roles;

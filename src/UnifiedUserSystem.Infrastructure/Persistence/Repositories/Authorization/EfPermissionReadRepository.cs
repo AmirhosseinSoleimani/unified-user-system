@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using UnifiedUserSystem.src.Application.Interfaces.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 

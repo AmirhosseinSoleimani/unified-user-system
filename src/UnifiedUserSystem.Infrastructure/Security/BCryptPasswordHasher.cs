@@ -1,4 +1,4 @@
-﻿using UnifiedUserSystem.Application.Abstractions.Security;
+﻿using UnifiedUserSystem.src.Application.Abstractions.Security;
 
 namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Security
 {

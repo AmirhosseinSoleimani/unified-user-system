@@ -1,12 +1,11 @@
 ﻿using UnifiedUserSystem.src.Contracts.DTOs.Auth;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
-using UnifiedUserSystem.Application.Validation;
-using UnifiedUserSystem.Application.Abstractions.Persistence;
-using UnifiedUserSystem.Application.Abstractions.Security;
-using UnifiedUserSystem.Application.Abstractions.Web;
-using UnifiedUserSystem.src.Application.Abstractions.Time;
+using UnifiedUserSystem.src.Application.Validation;
+using UnifiedUserSystem.src.Application.Abstractions.Persistence;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Web;
+using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Application.Abstractions.Services;
 
 

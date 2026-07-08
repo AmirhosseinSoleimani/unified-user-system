@@ -1,6 +1,5 @@
-﻿using UnifiedUserSystem.Application.Abstractions.Persistence;
-using UnifiedUserSystem.src.Application.Interfaces.Auditing;
-using UnifiedUserSystem.src.Application.Interfaces.Identity;
+﻿using UnifiedUserSystem.src.Application.Abstractions.Persistence;
+using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
 namespace UnifiedUserSystem.src.Infrastructure.Persistence
