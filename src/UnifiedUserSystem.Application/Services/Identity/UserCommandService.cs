@@ -101,11 +101,14 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             if (req is null)
                 throw new DomainException("Request is null.");
 
+            var hasFirstName = !string.IsNullOrWhiteSpace(req.FirstName);
+            var hasLastName = !string.IsNullOrWhiteSpace(req.LastName);
+            var hasPhoneNumber = !string.IsNullOrWhiteSpace(req.PhoneNumber);
             var hasFullname = !string.IsNullOrWhiteSpace(req.Fullname);
             var hasUsername = !string.IsNullOrWhiteSpace(req.Username);
             var hasPassword = !string.IsNullOrWhiteSpace(req.Password);
 
-            if (!hasFullname && !hasUsername && !hasPassword)
+            if (!hasFirstName && !hasLastName && !hasPhoneNumber && !hasFullname && !hasUsername && !hasPassword)
                 throw new DomainException("At least one updatable field must be provided.");
 
             var user = await _unitOfWork.Users.FindByIdWithRolesAsync(id, ct);
@@ -119,11 +122,26 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             var newValues = new Dictionary<string, object?>();
 
             var originalFullname = user.Fullname;
+            var originalFirstName = user.FirstName;
+            var originalLastName = user.LastName;
+            var originalPhoneNumber = user.PhoneNumber;
             var originalUsername = user.Username;
 
-            if (hasFullname)
+            if (hasFirstName || hasLastName || hasPhoneNumber || hasFullname)
             {
-                user.ChangeFullName(req.Fullname!, now, actorUserId);
+                var nextFirstName = req.FirstName ?? user.FirstName;
+                var nextLastName = req.LastName ?? user.LastName;
+
+                if (hasFullname && (!hasFirstName || !hasLastName))
+                {
+                    var splitName = User.SplitFullName(req.Fullname!);
+                    nextFirstName = hasFirstName ? nextFirstName : splitName.FirstName;
+                    nextLastName = hasLastName ? nextLastName : splitName.LastName;
+                }
+                var nextPhoneNumber = req.PhoneNumber ?? user.PhoneNumber;
+
+
+                user.ChangeProfile(nextFirstName, nextLastName, nextPhoneNumber, now, actorUserId);
             }
 
             if (hasUsername)
@@ -152,6 +170,24 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
             {
                 oldValues["Fullname"] = originalFullname;
                 newValues["Fullname"] = user.Fullname;
+            }
+
+            if (!string.Equals(originalFirstName, user.FirstName, StringComparison.Ordinal))
+            {
+                oldValues["FirstName"] = originalFirstName;
+                newValues["FirstName"] = user.FirstName;
+            }
+
+            if (!string.Equals(originalLastName, user.LastName, StringComparison.Ordinal))
+            {
+                oldValues["LastName"] = originalLastName;
+                newValues["LastName"] = user.LastName;
+            }
+
+            if (!string.Equals(originalPhoneNumber, user.PhoneNumber, StringComparison.Ordinal))
+            {
+                oldValues["PhoneNumber"] = originalPhoneNumber;
+                newValues["PhoneNumber"] = user.PhoneNumber;
             }
 
             if (!string.Equals(originalUsername, user.Username, StringComparison.Ordinal))
@@ -193,6 +229,9 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 Id = user.Id,
                 Email = user.Email,
                 Username = user.Username,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                PhoneNumber = user.PhoneNumber,
                 Fullname = user.Fullname,
                 IsActive = user.IsActive,
                 Roles = roles

@@ -40,6 +40,9 @@ namespace UnifiedUserSystem.src.Application.Services.Identity
                 Id = user.Id,
                 Email = user.Email,
                 Username = user.Username,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                PhoneNumber = user.PhoneNumber,
                 Fullname = user.Fullname,
                 IsActive = user.IsActive,
                 Roles = roles

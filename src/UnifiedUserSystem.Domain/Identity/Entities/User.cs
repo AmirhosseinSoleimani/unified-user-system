@@ -9,7 +9,10 @@ public class User : AuditableEntity<Guid>
     public const int EmailMaxLength = 255;
     public const int UsernameMaxLength = 20;
     public const int UsernameMinLength = 3;
+    public const int FirstNameMaxLength = 100;
+    public const int LastNameMaxLength = 100;
     public const int FullnameMaxLength = 255;
+    public const int PhoneNumberMaxLength = 20;
     public const int PasswordHashMaxLength = 72;
 
     private static readonly HashSet<string> ReserveUsernames = new(StringComparer.OrdinalIgnoreCase)
@@ -19,10 +22,15 @@ public class User : AuditableEntity<Guid>
     };
 
     private static readonly Regex UsernameRegex = new(@"^[A-Za-z][A-Za-z0-9_.]{2,19}$", RegexOptions.Compiled);
+    private static readonly Regex PhoneNumberRegex = new(@"^(\+[1-9]\d{7,14}|09\d{9})$", RegexOptions.Compiled);
+
 
     public string Email { get; private set; } = default!;
     public string Username { get; private set; } = default!;
-    public string Fullname { get; private set; } = default!;
+    public string FirstName { get; private set; } = default!;
+    public string LastName { get; private set; } = default!;
+    public string PhoneNumber { get; private set; } = default!;
+    public string Fullname => $"{FirstName} {LastName}".Trim();
     public string PasswordHash { get; private set; } = default!;
     public bool IsActive { get; private set; } = true;
 
@@ -32,11 +40,21 @@ public class User : AuditableEntity<Guid>
 
     public User() { }
 
-    public static User CreateNew(string email, string username, string fullname, string passwordHash, DateTimeOffset nowUtc, Guid? actorUserId)
+    public static User CreateNew(
+        string email,
+        string username,
+        string firstName,
+        string lastName,
+        string phoneNumber,
+        string passwordHash,
+        DateTimeOffset nowUtc,
+        Guid? actorUserId)
     {
         var newEmail = EnsureValidEmail(email);
         var newUsername = EnsureValidUsername(username);
-        var newFullname = EnsureValidFullname(fullname);
+        var newFirstName = EnsureValidFirstName(firstName);
+        var newLastName = EnsureValidLastName(lastName);
+        var newPhoneNumber = EnsureValidPhoneNumber(phoneNumber);
         var newPasswordHash = EnsureValidPasswordHash(passwordHash);
     
         var user =  new User
@@ -44,23 +62,47 @@ public class User : AuditableEntity<Guid>
             Id = Guid.NewGuid(),
             Email = newEmail,
             Username = newUsername,
-            Fullname = newFullname,
+            FirstName = newFirstName,
+            LastName = newLastName,
+            PhoneNumber = newPhoneNumber,
             PasswordHash = newPasswordHash,
             IsActive = true,
         };
         user.SetCreated(nowUtc, actorUserId ?? user.Id);
         return user;
     }
+
+    public void ChangeProfile(
+        string firstName,
+        string lastName,
+        string phoneNumber,
+        DateTimeOffset nowUtc,
+        Guid? actorUserId)
+    {
+        firstName = EnsureValidFirstName(firstName);
+        lastName = EnsureValidLastName(lastName);
+        phoneNumber = EnsureValidPhoneNumber(phoneNumber);
+
+        if (FirstName == firstName &&
+            LastName == lastName &&
+            PhoneNumber == phoneNumber)
+        {
+            return;
+        }
+
+        FirstName = firstName;
+        LastName = lastName;
+        PhoneNumber = phoneNumber;
+        Touch(nowUtc, actorUserId ?? Id);
+    }
+
+    [Obsolete("Use ChangeProfile instead.")]
     public void ChangeFullName(string newFullName, DateTimeOffset nowUtc, Guid? actorUserId)
     {
-        newFullName = EnsureValidFullname(newFullName);
-
-        if (Fullname == newFullName) return;
-
-        Fullname = newFullName;
-        Touch(nowUtc, actorUserId ?? Id);
-
+        var (firstName, lastName) = SplitFullName(newFullName);
+        ChangeProfile(firstName, lastName, PhoneNumber, nowUtc, actorUserId);
     }
+
     public void ChangePasswordHash(string newPasswordHash, DateTimeOffset nowUtc, Guid? actorUserId)
     {
         newPasswordHash = EnsureValidPasswordHash(newPasswordHash);
@@ -70,6 +112,7 @@ public class User : AuditableEntity<Guid>
         PasswordHash = newPasswordHash;
         Touch(nowUtc, actorUserId ?? Id);
     }
+
     public void ChangeUsername(string newUsername, DateTimeOffset nowUtc, Guid? actorUserId)
     {
         newUsername = EnsureValidUsername(newUsername);
@@ -79,6 +122,7 @@ public class User : AuditableEntity<Guid>
         Username = newUsername;
         Touch(nowUtc, actorUserId ?? Id);
     }
+
     public void Deactivate(DateTimeOffset nowUtc, Guid? actorUserId)
     {
         if (!IsActive) return;
@@ -128,9 +172,28 @@ public class User : AuditableEntity<Guid>
         UserRoles.Remove(ur);
         Touch(nowUtc, actorUserId ?? Id);
     }
+
     public static string NormalizeUsername(string username) => (username ?? "").Trim();
     public static string NormalizeEmail(string email) => (email ?? "").Trim().ToLowerInvariant();
+    public static string NormalizeFirstName(string firstName) => (firstName ?? "").Trim();
+    public static string NormalizeLastName(string lastName) => (lastName ?? "").Trim();
+    public static string NormalizePhoneNumber(string phoneNumber) => (phoneNumber ?? "").Trim();
     public static string NormalizeFullname(string fullname) => (fullname ?? "").Trim();
+
+    public static (string FirstName, string LastName) SplitFullName(string fullname)
+    {
+        fullname = NormalizeFullname(fullname);
+        Guard.NotEmpty(fullname, nameof(fullname));
+        Guard.MaxLen(fullname, FullnameMaxLength, nameof(fullname));
+
+        var parts = fullname.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length switch
+        {
+            1 => (parts[0], parts[0]),
+            _ => (parts[0], parts[1])
+        };
+    }
+
     private static string EnsureValidUsername(string username)
     {
         username = NormalizeUsername(username);
@@ -177,14 +240,35 @@ public class User : AuditableEntity<Guid>
         }
         return email;
     }
-    private static string EnsureValidFullname(string fullname) 
-    { 
-        fullname = NormalizeFullname(fullname);
+    private static string EnsureValidFirstName(string firstName)
+    {
+        firstName = NormalizeFirstName(firstName);
 
-        Guard.NotEmpty(fullname, nameof(fullname));
-        Guard.MaxLen(fullname, FullnameMaxLength, nameof(fullname));
+        Guard.NotEmpty(firstName, nameof(FirstName));
+        Guard.MaxLen(firstName, FirstNameMaxLength, nameof(FirstName));
 
-        return fullname;
+        return firstName;
+    }
+    private static string EnsureValidLastName(string lastName)
+    {
+        lastName = NormalizeLastName(lastName);
+
+        Guard.NotEmpty(lastName, nameof(LastName));
+        Guard.MaxLen(lastName, LastNameMaxLength, nameof(LastName));
+
+        return lastName;
+    }
+    private static string EnsureValidPhoneNumber(string phoneNumber)
+    {
+        phoneNumber = NormalizePhoneNumber(phoneNumber);
+
+        Guard.NotEmpty(phoneNumber, nameof(PhoneNumber));
+        Guard.MaxLen(phoneNumber, PhoneNumberMaxLength, nameof(PhoneNumber));
+
+        if (!PhoneNumberRegex.IsMatch(phoneNumber))
+            throw new DomainException("phone number format is invalid.");
+
+        return phoneNumber;
     }
     private static string EnsureValidPasswordHash(string passwordHash)
     {

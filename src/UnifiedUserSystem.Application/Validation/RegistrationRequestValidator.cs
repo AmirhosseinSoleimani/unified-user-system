@@ -19,13 +19,23 @@ public sealed class RegistrationRequestValidator : IRegistrationRequestValidator
 
         var email = Guard.NotEmpty(request.Email, nameof(request.Email));
         var username = Guard.NotEmpty(request.Username, nameof(request.Username));
-        var fullName = Guard.NotEmpty(request.FullName, nameof(request.FullName));
+        var firstName = request.FirstName;
+        var lastName = request.LastName;
+
+        if ((string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName)) &&
+            !string.IsNullOrWhiteSpace(request.FullName))
+        {
+            (firstName, lastName) = User.SplitFullName(request.FullName);
+        }
+        var phoneNumber = Guard.NotEmpty(request.PhoneNumber, nameof(request.PhoneNumber));
         var password = Guard.NotEmpty(request.Password, nameof(request.Password));
 
         User.CreateNew(
             email,
             username,
-            fullName,
+            firstName,
+            lastName,
+            phoneNumber,
             passwordHash: "application-validation-placeholder",
             DateTimeOffset.UnixEpoch,
             actorUserId: null);

@@ -27,10 +27,22 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
                 .HasMaxLength(User.UsernameMaxLength)
                 .IsRequired();
 
-            builder.Property(x => x.Fullname)
-                .HasColumnName("full_name")
-                .HasMaxLength(User.FullnameMaxLength)
+            builder.Property(x => x.FirstName)
+                .HasColumnName("first_name")
+                .HasMaxLength(User.FirstNameMaxLength)
                 .IsRequired();
+
+            builder.Property(x => x.LastName)
+                .HasColumnName("last_name")
+                .HasMaxLength(User.LastNameMaxLength)
+                .IsRequired();
+
+            builder.Property(x => x.PhoneNumber)
+                .HasColumnName("phone_number")
+                .HasMaxLength(User.PhoneNumberMaxLength)
+                .IsRequired(false);
+
+            builder.Ignore(x => x.Fullname);
 
             builder.Property(x => x.PasswordHash)
                 .HasColumnName("password_hash")
