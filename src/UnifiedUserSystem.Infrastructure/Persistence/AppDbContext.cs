@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;
+using UnifiedUserSystem.src.Domain.Security.Entities;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Domain.Auditing.Entities;
@@ -30,6 +31,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
         public DbSet<RoleOperation> RoleOperations => Set<RoleOperation>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<RefreshTokenSession> RefreshTokenSessions => Set<RefreshTokenSession>();
+        public DbSet<SecuritySettings> SecuritySettings => Set<SecuritySettings>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

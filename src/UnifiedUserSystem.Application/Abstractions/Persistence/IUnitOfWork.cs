@@ -10,5 +10,6 @@ public interface IUnitOfWork
     IRoleOperationRepository RoleOperations { get; }
     IAuditLogRepository AuditLogs { get; }
     IRefreshTokenSessionRepository RefreshTokenSessions { get; }
+    ISecuritySettingsRepository SecuritySettings { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

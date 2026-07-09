@@ -4,11 +4,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
 using UnifiedUserSystem.Api;
+using UnifiedUserSystem.src.Application.Options;
+using UnifiedUserSystem.Infrastructure;
 using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application;
-using UnifiedUserSystem.src.Application.Options;
 using UnifiedUserSystem.src.Contracts.Common;
-using UnifiedUserSystem.Infrastructure;
 using UnifiedUserSystem.src.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +25,9 @@ builder.Services.Configure<JwtOptions>(
 
 builder.Services.Configure<PermissionEvaluationOptions>(
     builder.Configuration.GetSection("PermissionEvaluation"));
+
+builder.Services.Configure<SecuritySettingsDefaultsOptions>(
+    builder.Configuration.GetSection("SecuritySettingsDefaults"));
 
 var disableSecurityRateLimiting =
     builder.Configuration.GetValue<bool>("DisableSecurityRateLimiting");

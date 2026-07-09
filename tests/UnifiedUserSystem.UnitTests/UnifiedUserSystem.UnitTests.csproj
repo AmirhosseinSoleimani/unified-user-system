@@ -21,6 +21,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\UnifiedUserSystem.Domain\UnifiedUserSystem.Domain.csproj" />
+	<ProjectReference Include="..\..\src\UnifiedUserSystem.Application\UnifiedUserSystem.Application.csproj" />
+	<ProjectReference Include="..\..\src\UnifiedUserSystem.Api\UnifiedUserSystem.Api.csproj" />
+	<ProjectReference Include="..\..\src\UnifiedUserSystem.Infrastructure\UnifiedUserSystem.Infrastructure.csproj" />
+	  <ProjectReference Include="..\..\src\UnifiedUserSystem.Contracts\UnifiedUserSystem.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 

@@ -14,7 +14,8 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
             IOperationRepository operations,
             IRoleOperationRepository roleOperations,
             IAuditLogRepository auditLogs,
-            IRefreshTokenSessionRepository refreshTokenSessions
+            IRefreshTokenSessionRepository refreshTokenSessions,
+            ISecuritySettingsRepository securitySettings
             )
         {
             _db = db;
@@ -24,6 +25,7 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
             RoleOperations = roleOperations;
             AuditLogs = auditLogs;
             RefreshTokenSessions = refreshTokenSessions;
+            SecuritySettings = securitySettings;
         }
         public IUserRepository Users { get; }
         public IRoleRepository Roles { get; }
@@ -31,6 +33,7 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
         public IRoleOperationRepository RoleOperations { get; }
         public IAuditLogRepository AuditLogs { get; }
         public IRefreshTokenSessionRepository RefreshTokenSessions { get; }
+        public ISecuritySettingsRepository SecuritySettings { get; }
         public Task<int> SaveChangesAsync(CancellationToken ct = default) => _db.SaveChangesAsync(ct);
     }
 }

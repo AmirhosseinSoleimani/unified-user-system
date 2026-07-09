@@ -1,13 +1,14 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.Application.Services.Authentication;
 using UnifiedUserSystem.Application.Services.Authorization;
-using UnifiedUserSystem.src.Application.Validation;
+using UnifiedUserSystem.Application.Services.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
-using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Services.Auditing;
 using UnifiedUserSystem.src.Application.Services.Identity;
 using UnifiedUserSystem.src.Application.Services.Security;
+using UnifiedUserSystem.src.Application.Validation;
 
 namespace UnifiedUserSystem.src.Application;
 
@@ -38,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthProtectionService, AuthProtectionService>();
         services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
         services.AddScoped<IPermissionCacheInvalidator, PermissionCacheInvalidator>();
+        services.AddScoped<ISecuritySettingsService, SecuritySettingsService>();
 
         return services;
     }

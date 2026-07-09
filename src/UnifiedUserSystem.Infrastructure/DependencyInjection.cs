@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Persistence;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Application.Abstractions.Web;
@@ -49,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IRefreshTokenSessionRepository, RefreshTokenSessionRepository>();
         services.AddScoped<IPermissionReadRepository, EfPermissionReadRepository>();
+        services.AddScoped<ISecuritySettingsRepository, SecuritySettingsRepository>();
 
         return services;
     }

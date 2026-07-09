@@ -22,8 +22,7 @@ public class User : AuditableEntity<Guid>
     };
 
     private static readonly Regex UsernameRegex = new(@"^[A-Za-z][A-Za-z0-9_.]{2,19}$", RegexOptions.Compiled);
-    private static readonly Regex PhoneNumberRegex = new(@"^(\+[1-9]\d{7,14}|09\d{9})$", RegexOptions.Compiled);
-
+    private static readonly Regex PhoneNumberRegex = new(@"^(\+989\d{9}|09\d{9})$", RegexOptions.Compiled);
 
     public string Email { get; private set; } = default!;
     public string Username { get; private set; } = default!;

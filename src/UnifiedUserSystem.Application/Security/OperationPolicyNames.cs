@@ -37,6 +37,9 @@ public static class OperationPolicyNames
     public const string PermissionsGrant = "OP:permission.grant";
     public const string PermissionsRevoke = "OP:permission.revoke";
 
+    public const string SecuritySettingsRead = "OP:security-settings.read";
+    public const string SecuritySettingsUpdate = "OP:security-settings.update";
+
     public static bool TryGetOperationKey(string? policyName, out string operationKey)
     {
         operationKey = string.Empty;
