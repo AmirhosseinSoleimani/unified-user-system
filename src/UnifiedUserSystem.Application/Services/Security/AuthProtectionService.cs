@@ -1,7 +1,8 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Options;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Abstractions.Web;
 using UnifiedUserSystem.src.Application.Options;
 
@@ -9,16 +10,17 @@ namespace UnifiedUserSystem.src.Application.Services.Security
 {
     public sealed class AuthProtectionService : IAuthProtectionService
     {
-        private const string Prefix = "auth:login";
+        private const string Prefix = "auth-protection:login";
+
         private readonly ITemporarySecurityStateStore _store;
-        private readonly AuthProtectionOptions _options;
+        private readonly ISecuritySettingsService _securitySettingsService;
 
         public AuthProtectionService(
             ITemporarySecurityStateStore store,
-            IOptions<AuthProtectionOptions> options)
+            ISecuritySettingsService securitySettingsService)
         {
             _store = store;
-            _options = options.Value;
+            _securitySettingsService = securitySettingsService;
         }
 
         public async Task<AuthProtectionCheckResult> CheckAsync(
@@ -26,47 +28,58 @@ namespace UnifiedUserSystem.src.Application.Services.Security
             IClientContext clientContext,
             CancellationToken ct = default)
         {
-            var identityLockout = await _store.GetStringAsync(IdentityLockoutKey(normalizedLoginIdentifier), ct);
-            if (identityLockout is not null)
-                return AuthProtectionCheckResult.Block();
+            try
+            {
+                var identityLockout = await _store.GetStringAsync(IdentityLockoutKey(normalizedLoginIdentifier), ct);
+                if (identityLockout is not null)
+                    return AuthProtectionCheckResult.Block(reason: "Login identifier is locked out.");
 
-            var clientLockout = await _store.GetStringAsync(ClientLockoutKey(clientContext), ct);
-            if (clientLockout is not null)
-                return AuthProtectionCheckResult.Block();
+                var clientLockout = await _store.GetStringAsync(ClientLockoutKey(clientContext), ct);
+                if (clientLockout is not null)
+                    return AuthProtectionCheckResult.Block(reason: "Client is locked out.");
 
-            var cooldown = await _store.GetStringAsync(ClientCooldownKey(clientContext), ct);
-            if (cooldown is not null)
-                return AuthProtectionCheckResult.Block();
+                var cooldown = await _store.GetStringAsync(ClientCooldownKey(clientContext), ct);
+                if (cooldown is not null)
+                    return AuthProtectionCheckResult.Block(reason: "Login cooldown is active.");
 
-            return AuthProtectionCheckResult.Allow();
+                return AuthProtectionCheckResult.Allow();
+            }
+            catch (SecurityStateUnavailableException)
+            {
+                return AuthProtectionCheckResult.Block(reason: "Authentication protection state is unavailable.");
+            }
         }
 
         public async Task RecordFailureAsync(
-            string normalizedLoginIdentifier,
-            IClientContext clientContext,
-            CancellationToken ct = default)
+        string normalizedLoginIdentifier,
+        IClientContext clientContext,
+        CancellationToken ct = default)
         {
-            var window = TimeSpan.FromMinutes(_options.FailedAttemptWindowMinutes);
-            var lockout = TimeSpan.FromMinutes(_options.LockoutMinutes);
-            var cooldown = TimeSpan.FromSeconds(_options.CooldownSeconds);
+            var settings = await _securitySettingsService.GetEffectiveAsync(ct);
+
+            var window = TimeSpan.FromSeconds(settings.LoginRateLimitWindowSeconds);
+            var lockout = TimeSpan.FromSeconds(settings.LoginLockoutDurationSeconds);
+            var cooldown = TimeSpan.FromSeconds(settings.LoginRateLimitCooldownSeconds);
+            var identityThreshold = settings.LoginLockoutFailureThreshold;
+            var clientThreshold = Math.Max(identityThreshold * 4, identityThreshold);
 
             var identityFailures = await _store.IncrementAsync(IdentityFailuresKey(normalizedLoginIdentifier), window, ct);
             var clientFailures = await _store.IncrementAsync(ClientFailuresKey(clientContext), window, ct);
 
-            if (identityFailures >= _options.MaxFailedAttemptsPerIdentity)
+            if (identityFailures >= identityThreshold)
                 await _store.SetStringAsync(IdentityLockoutKey(normalizedLoginIdentifier), "1", lockout, ct);
 
-            if (clientFailures >= _options.MaxFailedAttemptsPerClient)
+            if (clientFailures >= clientThreshold)
                 await _store.SetStringAsync(ClientLockoutKey(clientContext), "1", lockout, ct);
 
-            if (_options.CooldownSeconds > 0)
+            if (cooldown > TimeSpan.Zero)
                 await _store.SetStringAsync(ClientCooldownKey(clientContext), "1", cooldown, ct);
         }
 
         public async Task ResetAsync(
-            string normalizedLoginIdentifier,
-            IClientContext clientContext,
-            CancellationToken ct = default)
+        string normalizedLoginIdentifier,
+        IClientContext clientContext,
+        CancellationToken ct = default)
         {
             await _store.RemoveAsync(IdentityFailuresKey(normalizedLoginIdentifier), ct);
             await _store.RemoveAsync(IdentityLockoutKey(normalizedLoginIdentifier), ct);
@@ -76,7 +89,7 @@ namespace UnifiedUserSystem.src.Application.Services.Security
         }
 
         private static string IdentityFailuresKey(string normalizedLoginIdentifier)
-            => $"{Prefix}:identity:{Hash(NormalizeIdentifier(normalizedLoginIdentifier))}:failures";
+        => $"{Prefix}:identity:{Hash(NormalizeIdentifier(normalizedLoginIdentifier))}:failures";
 
         private static string IdentityLockoutKey(string normalizedLoginIdentifier)
             => $"{Prefix}:identity:{Hash(NormalizeIdentifier(normalizedLoginIdentifier))}:lockout";

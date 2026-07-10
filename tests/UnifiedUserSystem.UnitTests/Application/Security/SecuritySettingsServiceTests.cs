@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
 using Moq;
-using UnifiedUserSystem.Application.Services.Security;
+using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Persistence;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Time;
@@ -33,10 +33,24 @@ public class SecuritySettingsServiceTests
         response.IsPhoneOtpEnabled.Should().BeTrue();
         response.OtpExpirationMinutes.Should().Be(5);
         response.OtpMaxAttempts.Should().Be(5);
+
         response.LoginRateLimitPermitLimit.Should().Be(10);
         response.LoginRateLimitWindowSeconds.Should().Be(60);
+        response.LoginRateLimitQueueLimit.Should().Be(0);
+        response.LoginRateLimitCooldownSeconds.Should().Be(2);
+        response.LoginLockoutFailureThreshold.Should().Be(5);
+        response.LoginLockoutDurationSeconds.Should().Be(900);
+
         response.RefreshTokenRateLimitPermitLimit.Should().Be(10);
         response.RefreshTokenRateLimitWindowSeconds.Should().Be(60);
+        response.RefreshTokenRateLimitQueueLimit.Should().Be(0);
+        response.RefreshTokenRateLimitCooldownSeconds.Should().Be(2);
+
+        response.SensitiveAdminRateLimitPermitLimit.Should().Be(30);
+        response.SensitiveAdminRateLimitWindowSeconds.Should().Be(60);
+        response.SensitiveAdminRateLimitQueueLimit.Should().Be(0);
+        response.SensitiveAdminRateLimitCooldownSeconds.Should().Be(2);
+
         response.AllowedIpRanges.Should().BeEmpty();
         response.BlockedIpRanges.Should().BeEmpty();
     }
@@ -67,10 +81,24 @@ public class SecuritySettingsServiceTests
         response.IsPhoneOtpEnabled.Should().BeTrue();
         response.OtpExpirationMinutes.Should().Be(10);
         response.OtpMaxAttempts.Should().Be(3);
+
         response.LoginRateLimitPermitLimit.Should().Be(7);
         response.LoginRateLimitWindowSeconds.Should().Be(30);
+        response.LoginRateLimitQueueLimit.Should().Be(0);
+        response.LoginRateLimitCooldownSeconds.Should().Be(2);
+        response.LoginLockoutFailureThreshold.Should().Be(5);
+        response.LoginLockoutDurationSeconds.Should().Be(900);
+
         response.RefreshTokenRateLimitPermitLimit.Should().Be(12);
         response.RefreshTokenRateLimitWindowSeconds.Should().Be(45);
+        response.RefreshTokenRateLimitQueueLimit.Should().Be(0);
+        response.RefreshTokenRateLimitCooldownSeconds.Should().Be(2);
+
+        response.SensitiveAdminRateLimitPermitLimit.Should().Be(30);
+        response.SensitiveAdminRateLimitWindowSeconds.Should().Be(60);
+        response.SensitiveAdminRateLimitQueueLimit.Should().Be(0);
+        response.SensitiveAdminRateLimitCooldownSeconds.Should().Be(2);
+
         response.AllowedIpRanges.Should().Equal("192.168.1.0/24");
         response.BlockedIpRanges.Should().Equal("10.0.0.1");
     }
@@ -149,6 +177,66 @@ public class SecuritySettingsServiceTests
     }
 
     [Fact]
+    public async Task UpdateAsync_rejects_invalid_login_rate_limit_queue_limit()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.LoginRateLimitQueueLimit = -1;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*LoginRateLimitQueueLimit*greater than or equal to 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_login_rate_limit_cooldown_seconds()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.LoginRateLimitCooldownSeconds = -1;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*LoginRateLimitCooldownSeconds*greater than or equal to 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_login_lockout_failure_threshold()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.LoginLockoutFailureThreshold = 0;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*LoginLockoutFailureThreshold*greater than 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_login_lockout_duration_seconds()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.LoginLockoutDurationSeconds = 0;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*LoginLockoutDurationSeconds*greater than 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task UpdateAsync_rejects_invalid_refresh_token_rate_limit_permit_limit()
     {
         var fixture = Fixture(databaseSettings: null);
@@ -174,6 +262,96 @@ public class SecuritySettingsServiceTests
 
         await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*RefreshTokenRateLimitWindowSeconds*greater than 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_refresh_token_rate_limit_queue_limit()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.RefreshTokenRateLimitQueueLimit = -1;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*RefreshTokenRateLimitQueueLimit*greater than or equal to 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_refresh_token_rate_limit_cooldown_seconds()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.RefreshTokenRateLimitCooldownSeconds = -1;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*RefreshTokenRateLimitCooldownSeconds*greater than or equal to 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_sensitive_admin_rate_limit_permit_limit()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.SensitiveAdminRateLimitPermitLimit = 0;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitPermitLimit*greater than 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_sensitive_admin_rate_limit_window_seconds()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.SensitiveAdminRateLimitWindowSeconds = 0;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitWindowSeconds*greater than 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_sensitive_admin_rate_limit_queue_limit()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.SensitiveAdminRateLimitQueueLimit = -1;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitQueueLimit*greater than or equal to 0*");
+
+        fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_rejects_invalid_sensitive_admin_rate_limit_cooldown_seconds()
+    {
+        var fixture = Fixture(databaseSettings: null);
+        var request = ValidRequest();
+        request.SensitiveAdminRateLimitCooldownSeconds = -1;
+
+        var act = () => fixture.Service.UpdateAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitCooldownSeconds*greater than or equal to 0*");
 
         fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -224,10 +402,24 @@ public class SecuritySettingsServiceTests
         response.IsPhoneOtpEnabled.Should().Be(request.IsPhoneOtpEnabled);
         response.OtpExpirationMinutes.Should().Be(request.OtpExpirationMinutes);
         response.OtpMaxAttempts.Should().Be(request.OtpMaxAttempts);
+
         response.LoginRateLimitPermitLimit.Should().Be(request.LoginRateLimitPermitLimit);
         response.LoginRateLimitWindowSeconds.Should().Be(request.LoginRateLimitWindowSeconds);
+        response.LoginRateLimitQueueLimit.Should().Be(request.LoginRateLimitQueueLimit);
+        response.LoginRateLimitCooldownSeconds.Should().Be(request.LoginRateLimitCooldownSeconds);
+        response.LoginLockoutFailureThreshold.Should().Be(request.LoginLockoutFailureThreshold);
+        response.LoginLockoutDurationSeconds.Should().Be(request.LoginLockoutDurationSeconds);
+
         response.RefreshTokenRateLimitPermitLimit.Should().Be(request.RefreshTokenRateLimitPermitLimit);
         response.RefreshTokenRateLimitWindowSeconds.Should().Be(request.RefreshTokenRateLimitWindowSeconds);
+        response.RefreshTokenRateLimitQueueLimit.Should().Be(request.RefreshTokenRateLimitQueueLimit);
+        response.RefreshTokenRateLimitCooldownSeconds.Should().Be(request.RefreshTokenRateLimitCooldownSeconds);
+
+        response.SensitiveAdminRateLimitPermitLimit.Should().Be(request.SensitiveAdminRateLimitPermitLimit);
+        response.SensitiveAdminRateLimitWindowSeconds.Should().Be(request.SensitiveAdminRateLimitWindowSeconds);
+        response.SensitiveAdminRateLimitQueueLimit.Should().Be(request.SensitiveAdminRateLimitQueueLimit);
+        response.SensitiveAdminRateLimitCooldownSeconds.Should().Be(request.SensitiveAdminRateLimitCooldownSeconds);
+
         response.AllowedIpRanges.Should().Equal(request.AllowedIpRanges);
         response.BlockedIpRanges.Should().Equal(request.BlockedIpRanges);
 
@@ -262,8 +454,18 @@ public class SecuritySettingsServiceTests
             OtpMaxAttempts = 4,
             LoginRateLimitPermitLimit = 6,
             LoginRateLimitWindowSeconds = 90,
+            LoginRateLimitQueueLimit = 1,
+            LoginRateLimitCooldownSeconds = 3,
+            LoginLockoutFailureThreshold = 7,
+            LoginLockoutDurationSeconds = 600,
             RefreshTokenRateLimitPermitLimit = 12,
             RefreshTokenRateLimitWindowSeconds = 120,
+            RefreshTokenRateLimitQueueLimit = 2,
+            RefreshTokenRateLimitCooldownSeconds = 4,
+            SensitiveAdminRateLimitPermitLimit = 40,
+            SensitiveAdminRateLimitWindowSeconds = 180,
+            SensitiveAdminRateLimitQueueLimit = 1,
+            SensitiveAdminRateLimitCooldownSeconds = 5,
             AllowedIpRanges = new[] { "192.168.10.0/24" },
             BlockedIpRanges = new[] { "10.10.10.10" }
         };
@@ -276,10 +478,24 @@ public class SecuritySettingsServiceTests
         response.IsPhoneOtpEnabled.Should().BeFalse();
         response.OtpExpirationMinutes.Should().Be(15);
         response.OtpMaxAttempts.Should().Be(4);
+
         response.LoginRateLimitPermitLimit.Should().Be(6);
         response.LoginRateLimitWindowSeconds.Should().Be(90);
+        response.LoginRateLimitQueueLimit.Should().Be(1);
+        response.LoginRateLimitCooldownSeconds.Should().Be(3);
+        response.LoginLockoutFailureThreshold.Should().Be(7);
+        response.LoginLockoutDurationSeconds.Should().Be(600);
+
         response.RefreshTokenRateLimitPermitLimit.Should().Be(12);
         response.RefreshTokenRateLimitWindowSeconds.Should().Be(120);
+        response.RefreshTokenRateLimitQueueLimit.Should().Be(2);
+        response.RefreshTokenRateLimitCooldownSeconds.Should().Be(4);
+
+        response.SensitiveAdminRateLimitPermitLimit.Should().Be(40);
+        response.SensitiveAdminRateLimitWindowSeconds.Should().Be(180);
+        response.SensitiveAdminRateLimitQueueLimit.Should().Be(1);
+        response.SensitiveAdminRateLimitCooldownSeconds.Should().Be(5);
+
         response.AllowedIpRanges.Should().Equal("192.168.10.0/24");
         response.BlockedIpRanges.Should().Equal("10.10.10.10");
 
@@ -289,7 +505,6 @@ public class SecuritySettingsServiceTests
         fixture.SecuritySettingsRepository.Verify(x => x.Add(It.IsAny<SecuritySettings>()), Times.Never);
         fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
-
 
     private static UpdateSecuritySettingsRequest ValidRequest() => new()
     {
@@ -301,8 +516,18 @@ public class SecuritySettingsServiceTests
         OtpMaxAttempts = 5,
         LoginRateLimitPermitLimit = 10,
         LoginRateLimitWindowSeconds = 60,
+        LoginRateLimitQueueLimit = 0,
+        LoginRateLimitCooldownSeconds = 2,
+        LoginLockoutFailureThreshold = 5,
+        LoginLockoutDurationSeconds = 900,
         RefreshTokenRateLimitPermitLimit = 10,
         RefreshTokenRateLimitWindowSeconds = 60,
+        RefreshTokenRateLimitQueueLimit = 0,
+        RefreshTokenRateLimitCooldownSeconds = 2,
+        SensitiveAdminRateLimitPermitLimit = 30,
+        SensitiveAdminRateLimitWindowSeconds = 60,
+        SensitiveAdminRateLimitQueueLimit = 0,
+        SensitiveAdminRateLimitCooldownSeconds = 2,
         AllowedIpRanges = new[] { "192.168.1.0/24" },
         BlockedIpRanges = new[] { "10.0.0.1" }
     };
@@ -322,19 +547,29 @@ public class SecuritySettingsServiceTests
         bool isPhoneOtpEnabled = true)
     {
         return SecuritySettings.Create(
-            isMfaEnabled,
-            isOtpEnabled,
-            isEmailOtpEnabled,
-            isPhoneOtpEnabled,
-            otpExpirationMinutes,
-            otpMaxAttempts,
-            loginRateLimitPermitLimit,
-            loginRateLimitWindowSeconds,
-            refreshTokenRateLimitPermitLimit,
-            refreshTokenRateLimitWindowSeconds,
-            allowedIpRanges,
-            blockedIpRanges,
-            DateTimeOffset.UnixEpoch,
+            isMfaEnabled: isMfaEnabled,
+            isOtpEnabled: isOtpEnabled,
+            isEmailOtpEnabled: isEmailOtpEnabled,
+            isPhoneOtpEnabled: isPhoneOtpEnabled,
+            otpExpirationMinutes: otpExpirationMinutes,
+            otpMaxAttempts: otpMaxAttempts,
+            loginRateLimitPermitLimit: loginRateLimitPermitLimit,
+            loginRateLimitWindowSeconds: loginRateLimitWindowSeconds,
+            loginRateLimitQueueLimit: 0,
+            loginRateLimitCooldownSeconds: 2,
+            loginLockoutFailureThreshold: 5,
+            loginLockoutDurationSeconds: 900,
+            refreshTokenRateLimitPermitLimit: refreshTokenRateLimitPermitLimit,
+            refreshTokenRateLimitWindowSeconds: refreshTokenRateLimitWindowSeconds,
+            refreshTokenRateLimitQueueLimit: 0,
+            refreshTokenRateLimitCooldownSeconds: 2,
+            sensitiveAdminRateLimitPermitLimit: 30,
+            sensitiveAdminRateLimitWindowSeconds: 60,
+            sensitiveAdminRateLimitQueueLimit: 0,
+            sensitiveAdminRateLimitCooldownSeconds: 2,
+            allowedIpRanges: allowedIpRanges,
+            blockedIpRanges: blockedIpRanges,
+            nowUtc: DateTimeOffset.UnixEpoch,
             actorUserId: null);
     }
 
@@ -375,6 +610,4 @@ public class SecuritySettingsServiceTests
         public Guid? UserId => ActorUserId;
         public bool IsAuthenticated => true;
     }
-
-
 }

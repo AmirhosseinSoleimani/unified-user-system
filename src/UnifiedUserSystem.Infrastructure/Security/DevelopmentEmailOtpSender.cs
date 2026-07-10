@@ -2,7 +2,7 @@
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using Microsoft.Extensions.Options;
-using MfaOptions = UnifiedUserSystem.src.Application.Options.MfaOptions;
+using UnifiedUserSystem.src.Application.Options;
 
 namespace UnifiedUserSystem.src.Infrastructure.Security;
 

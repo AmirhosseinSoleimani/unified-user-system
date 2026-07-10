@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using UnifiedUserSystem.src.Application.Abstractions.Persistence;
-using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Security;
+using StackExchange.Redis;
 using UnifiedUserSystem.src.Application.Abstractions.Auditing;
+using UnifiedUserSystem.src.Application.Abstractions.Persistence;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Application.Abstractions.Web;
@@ -11,6 +11,7 @@ using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Authorization;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Security;
 using UnifiedUserSystem.src.Infrastructure.Security;
 using UnifiedUserSystem.src.Infrastructure.Time;
 using UnifiedUserSystem.src.Infrastructure.Web;
@@ -27,7 +28,7 @@ public static class DependencyInjection
     {
         services
             .AddPersistence(configuration)
-            .AddSecurity()
+            .AddSecurity(configuration)
             .AddWebContext()
             .AddSystemServices();
 
@@ -56,12 +57,21 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddSecurity(this IServiceCollection services)
+    private static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<RedisOptions>(configuration.GetSection("Redis"));
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+                {
+                    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RedisOptions>>().Value;
+                    return ConnectionMultiplexer.Connect(options.ConnectionString);
+                });
+
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-        services.AddSingleton<ITemporarySecurityStateStore, MemoryTemporarySecurityStateStore>();
+        services.AddSingleton<ITemporarySecurityStateStore, RedisTemporarySecurityStateStore>();
+        services.AddSingleton<IDistributedRateLimitStore, RedisDistributedRateLimitStore>();
         services.AddSingleton<IPermissionCache, MemoryPermissionCache>();
         services.AddScoped<IOtpGenerator, OtpGenerator>();
         services.AddScoped<IOtpHasher, Sha256OtpHasher>();

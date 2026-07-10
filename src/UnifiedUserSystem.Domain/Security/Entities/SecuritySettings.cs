@@ -14,10 +14,24 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
     public bool IsPhoneOtpEnabled { get; private set; }
     public int OtpExpirationMinutes { get; private set; }
     public int OtpMaxAttempts { get; private set; }
+
     public int LoginRateLimitPermitLimit { get; private set; }
     public int LoginRateLimitWindowSeconds { get; private set; }
+    public int LoginRateLimitQueueLimit { get; private set; }
+    public int LoginRateLimitCooldownSeconds { get; private set; }
+    public int LoginLockoutFailureThreshold { get; private set; }
+    public int LoginLockoutDurationSeconds { get; private set; }
+
     public int RefreshTokenRateLimitPermitLimit { get; private set; }
     public int RefreshTokenRateLimitWindowSeconds { get; private set; }
+    public int RefreshTokenRateLimitQueueLimit { get; private set; }
+    public int RefreshTokenRateLimitCooldownSeconds { get; private set; }
+
+    public int SensitiveAdminRateLimitPermitLimit { get; private set; }
+    public int SensitiveAdminRateLimitWindowSeconds { get; private set; }
+    public int SensitiveAdminRateLimitQueueLimit { get; private set; }
+    public int SensitiveAdminRateLimitCooldownSeconds { get; private set; }
+
     public string AllowedIpRanges { get; private set; } = string.Empty;
     public string BlockedIpRanges { get; private set; } = string.Empty;
 
@@ -36,29 +50,49 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
             otpMaxAttempts: 5,
             loginRateLimitPermitLimit: 10,
             loginRateLimitWindowSeconds: 60,
+            loginRateLimitQueueLimit: 0,
+            loginRateLimitCooldownSeconds: 2,
+            loginLockoutFailureThreshold: 5,
+            loginLockoutDurationSeconds: 900,
             refreshTokenRateLimitPermitLimit: 10,
             refreshTokenRateLimitWindowSeconds: 60,
+            refreshTokenRateLimitQueueLimit: 0,
+            refreshTokenRateLimitCooldownSeconds: 2,
+            sensitiveAdminRateLimitPermitLimit: 30,
+            sensitiveAdminRateLimitWindowSeconds: 60,
+            sensitiveAdminRateLimitQueueLimit: 0,
+            sensitiveAdminRateLimitCooldownSeconds: 2,
             allowedIpRanges: Array.Empty<string>(),
             blockedIpRanges: Array.Empty<string>(),
-            nowUtc,
-            actorUserId);
+            nowUtc: nowUtc,
+            actorUserId: actorUserId);
     }
 
     public static SecuritySettings Create(
-    bool isMfaEnabled,
-    bool isOtpEnabled,
-    bool isEmailOtpEnabled,
-    bool isPhoneOtpEnabled,
-    int otpExpirationMinutes,
-    int otpMaxAttempts,
-    int loginRateLimitPermitLimit,
-    int loginRateLimitWindowSeconds,
-    int refreshTokenRateLimitPermitLimit,
-    int refreshTokenRateLimitWindowSeconds,
-    IReadOnlyCollection<string>? allowedIpRanges,
-    IReadOnlyCollection<string>? blockedIpRanges,
-    DateTimeOffset nowUtc,
-    Guid? actorUserId)
+        bool isMfaEnabled,
+        bool isOtpEnabled,
+        bool isEmailOtpEnabled,
+        bool isPhoneOtpEnabled,
+        int otpExpirationMinutes,
+        int otpMaxAttempts,
+        int loginRateLimitPermitLimit,
+        int loginRateLimitWindowSeconds,
+        int loginRateLimitQueueLimit,
+        int loginRateLimitCooldownSeconds,
+        int loginLockoutFailureThreshold,
+        int loginLockoutDurationSeconds,
+        int refreshTokenRateLimitPermitLimit,
+        int refreshTokenRateLimitWindowSeconds,
+        int refreshTokenRateLimitQueueLimit,
+        int refreshTokenRateLimitCooldownSeconds,
+        int sensitiveAdminRateLimitPermitLimit,
+        int sensitiveAdminRateLimitWindowSeconds,
+        int sensitiveAdminRateLimitQueueLimit,
+        int sensitiveAdminRateLimitCooldownSeconds,
+        IReadOnlyCollection<string>? allowedIpRanges,
+        IReadOnlyCollection<string>? blockedIpRanges,
+        DateTimeOffset nowUtc,
+        Guid? actorUserId)
     {
         var settings = new SecuritySettings
         {
@@ -74,32 +108,50 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
             otpMaxAttempts,
             loginRateLimitPermitLimit,
             loginRateLimitWindowSeconds,
+            loginRateLimitQueueLimit,
+            loginRateLimitCooldownSeconds,
+            loginLockoutFailureThreshold,
+            loginLockoutDurationSeconds,
             refreshTokenRateLimitPermitLimit,
             refreshTokenRateLimitWindowSeconds,
+            refreshTokenRateLimitQueueLimit,
+            refreshTokenRateLimitCooldownSeconds,
+            sensitiveAdminRateLimitPermitLimit,
+            sensitiveAdminRateLimitWindowSeconds,
+            sensitiveAdminRateLimitQueueLimit,
+            sensitiveAdminRateLimitCooldownSeconds,
             allowedIpRanges,
-            blockedIpRanges,
-            nowUtc,
-            actorUserId);
+            blockedIpRanges);
 
         settings.SetCreated(nowUtc, actorUserId);
         return settings;
     }
 
     public void Update(
-    bool isMfaEnabled,
-    bool isOtpEnabled,
-    bool isEmailOtpEnabled,
-    bool isPhoneOtpEnabled,
-    int otpExpirationMinutes,
-    int otpMaxAttempts,
-    int loginRateLimitPermitLimit,
-    int loginRateLimitWindowSeconds,
-    int refreshTokenRateLimitPermitLimit,
-    int refreshTokenRateLimitWindowSeconds,
-    IReadOnlyCollection<string>? allowedIpRanges,
-    IReadOnlyCollection<string>? blockedIpRanges,
-    DateTimeOffset nowUtc,
-    Guid? actorUserId)
+        bool isMfaEnabled,
+        bool isOtpEnabled,
+        bool isEmailOtpEnabled,
+        bool isPhoneOtpEnabled,
+        int otpExpirationMinutes,
+        int otpMaxAttempts,
+        int loginRateLimitPermitLimit,
+        int loginRateLimitWindowSeconds,
+        int loginRateLimitQueueLimit,
+        int loginRateLimitCooldownSeconds,
+        int loginLockoutFailureThreshold,
+        int loginLockoutDurationSeconds,
+        int refreshTokenRateLimitPermitLimit,
+        int refreshTokenRateLimitWindowSeconds,
+        int refreshTokenRateLimitQueueLimit,
+        int refreshTokenRateLimitCooldownSeconds,
+        int sensitiveAdminRateLimitPermitLimit,
+        int sensitiveAdminRateLimitWindowSeconds,
+        int sensitiveAdminRateLimitQueueLimit,
+        int sensitiveAdminRateLimitCooldownSeconds,
+        IReadOnlyCollection<string>? allowedIpRanges,
+        IReadOnlyCollection<string>? blockedIpRanges,
+        DateTimeOffset nowUtc,
+        Guid? actorUserId)
     {
         Apply(
             isMfaEnabled,
@@ -110,42 +162,71 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
             otpMaxAttempts,
             loginRateLimitPermitLimit,
             loginRateLimitWindowSeconds,
+            loginRateLimitQueueLimit,
+            loginRateLimitCooldownSeconds,
+            loginLockoutFailureThreshold,
+            loginLockoutDurationSeconds,
             refreshTokenRateLimitPermitLimit,
             refreshTokenRateLimitWindowSeconds,
+            refreshTokenRateLimitQueueLimit,
+            refreshTokenRateLimitCooldownSeconds,
+            sensitiveAdminRateLimitPermitLimit,
+            sensitiveAdminRateLimitWindowSeconds,
+            sensitiveAdminRateLimitQueueLimit,
+            sensitiveAdminRateLimitCooldownSeconds,
             allowedIpRanges,
-            blockedIpRanges,
-            nowUtc,
-            actorUserId);
+            blockedIpRanges);
 
         Touch(nowUtc, actorUserId);
     }
 
     public string[] GetAllowedIpRanges() => SplitRanges(AllowedIpRanges);
+
     public string[] GetBlockedIpRanges() => SplitRanges(BlockedIpRanges);
 
-
     private void Apply(
-    bool isMfaEnabled,
-    bool isOtpEnabled,
-    bool isEmailOtpEnabled,
-    bool isPhoneOtpEnabled,
-    int otpExpirationMinutes,
-    int otpMaxAttempts,
-    int loginRateLimitPermitLimit,
-    int loginRateLimitWindowSeconds,
-    int refreshTokenRateLimitPermitLimit,
-    int refreshTokenRateLimitWindowSeconds,
-    IReadOnlyCollection<string>? allowedIpRanges,
-    IReadOnlyCollection<string>? blockedIpRanges,
-    DateTimeOffset nowUtc,
-    Guid? actorUserId)
+        bool isMfaEnabled,
+        bool isOtpEnabled,
+        bool isEmailOtpEnabled,
+        bool isPhoneOtpEnabled,
+        int otpExpirationMinutes,
+        int otpMaxAttempts,
+        int loginRateLimitPermitLimit,
+        int loginRateLimitWindowSeconds,
+        int loginRateLimitQueueLimit,
+        int loginRateLimitCooldownSeconds,
+        int loginLockoutFailureThreshold,
+        int loginLockoutDurationSeconds,
+        int refreshTokenRateLimitPermitLimit,
+        int refreshTokenRateLimitWindowSeconds,
+        int refreshTokenRateLimitQueueLimit,
+        int refreshTokenRateLimitCooldownSeconds,
+        int sensitiveAdminRateLimitPermitLimit,
+        int sensitiveAdminRateLimitWindowSeconds,
+        int sensitiveAdminRateLimitQueueLimit,
+        int sensitiveAdminRateLimitCooldownSeconds,
+        IReadOnlyCollection<string>? allowedIpRanges,
+        IReadOnlyCollection<string>? blockedIpRanges)
     {
         Guard.True(otpExpirationMinutes > 0, "OtpExpirationMinutes must be greater than 0.");
         Guard.True(otpMaxAttempts > 0, "OtpMaxAttempts must be greater than 0.");
+
         Guard.True(loginRateLimitPermitLimit > 0, "LoginRateLimitPermitLimit must be greater than 0.");
         Guard.True(loginRateLimitWindowSeconds > 0, "LoginRateLimitWindowSeconds must be greater than 0.");
+        Guard.True(loginRateLimitQueueLimit >= 0, "LoginRateLimitQueueLimit must be greater than or equal to 0.");
+        Guard.True(loginRateLimitCooldownSeconds >= 0, "LoginRateLimitCooldownSeconds must be greater than or equal to 0.");
+        Guard.True(loginLockoutFailureThreshold > 0, "LoginLockoutFailureThreshold must be greater than 0.");
+        Guard.True(loginLockoutDurationSeconds > 0, "LoginLockoutDurationSeconds must be greater than 0.");
+
         Guard.True(refreshTokenRateLimitPermitLimit > 0, "RefreshTokenRateLimitPermitLimit must be greater than 0.");
         Guard.True(refreshTokenRateLimitWindowSeconds > 0, "RefreshTokenRateLimitWindowSeconds must be greater than 0.");
+        Guard.True(refreshTokenRateLimitQueueLimit >= 0, "RefreshTokenRateLimitQueueLimit must be greater than or equal to 0.");
+        Guard.True(refreshTokenRateLimitCooldownSeconds >= 0, "RefreshTokenRateLimitCooldownSeconds must be greater than or equal to 0.");
+
+        Guard.True(sensitiveAdminRateLimitPermitLimit > 0, "SensitiveAdminRateLimitPermitLimit must be greater than 0.");
+        Guard.True(sensitiveAdminRateLimitWindowSeconds > 0, "SensitiveAdminRateLimitWindowSeconds must be greater than 0.");
+        Guard.True(sensitiveAdminRateLimitQueueLimit >= 0, "SensitiveAdminRateLimitQueueLimit must be greater than or equal to 0.");
+        Guard.True(sensitiveAdminRateLimitCooldownSeconds >= 0, "SensitiveAdminRateLimitCooldownSeconds must be greater than or equal to 0.");
 
         var normalizedAllowed = NormalizeRanges(allowedIpRanges);
         var normalizedBlocked = NormalizeRanges(blockedIpRanges);
@@ -166,10 +247,24 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
         IsPhoneOtpEnabled = isPhoneOtpEnabled;
         OtpExpirationMinutes = otpExpirationMinutes;
         OtpMaxAttempts = otpMaxAttempts;
+
         LoginRateLimitPermitLimit = loginRateLimitPermitLimit;
         LoginRateLimitWindowSeconds = loginRateLimitWindowSeconds;
+        LoginRateLimitQueueLimit = loginRateLimitQueueLimit;
+        LoginRateLimitCooldownSeconds = loginRateLimitCooldownSeconds;
+        LoginLockoutFailureThreshold = loginLockoutFailureThreshold;
+        LoginLockoutDurationSeconds = loginLockoutDurationSeconds;
+
         RefreshTokenRateLimitPermitLimit = refreshTokenRateLimitPermitLimit;
         RefreshTokenRateLimitWindowSeconds = refreshTokenRateLimitWindowSeconds;
+        RefreshTokenRateLimitQueueLimit = refreshTokenRateLimitQueueLimit;
+        RefreshTokenRateLimitCooldownSeconds = refreshTokenRateLimitCooldownSeconds;
+
+        SensitiveAdminRateLimitPermitLimit = sensitiveAdminRateLimitPermitLimit;
+        SensitiveAdminRateLimitWindowSeconds = sensitiveAdminRateLimitWindowSeconds;
+        SensitiveAdminRateLimitQueueLimit = sensitiveAdminRateLimitQueueLimit;
+        SensitiveAdminRateLimitCooldownSeconds = sensitiveAdminRateLimitCooldownSeconds;
+
         AllowedIpRanges = allowed;
         BlockedIpRanges = blocked;
     }

@@ -17,3 +17,16 @@ public interface ITemporarySecurityStateStore
 
     Task RemoveAsync(string key, CancellationToken ct = default);
 }
+
+public sealed class SecurityStateUnavailableException : Exception
+{
+    public SecurityStateUnavailableException(string message)
+        : base(message)
+    {
+    }
+
+    public SecurityStateUnavailableException(string message, Exception innerException)
+       : base(message, innerException)
+    {
+    }
+}

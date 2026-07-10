@@ -21,10 +21,24 @@ public class SecuritySettingsInvariantTests
         settings.IsPhoneOtpEnabled.Should().BeTrue();
         settings.OtpExpirationMinutes.Should().Be(5);
         settings.OtpMaxAttempts.Should().Be(5);
+
         settings.LoginRateLimitPermitLimit.Should().Be(10);
         settings.LoginRateLimitWindowSeconds.Should().Be(60);
+        settings.LoginRateLimitQueueLimit.Should().Be(0);
+        settings.LoginRateLimitCooldownSeconds.Should().Be(2);
+        settings.LoginLockoutFailureThreshold.Should().Be(5);
+        settings.LoginLockoutDurationSeconds.Should().Be(900);
+
         settings.RefreshTokenRateLimitPermitLimit.Should().Be(10);
         settings.RefreshTokenRateLimitWindowSeconds.Should().Be(60);
+        settings.RefreshTokenRateLimitQueueLimit.Should().Be(0);
+        settings.RefreshTokenRateLimitCooldownSeconds.Should().Be(2);
+
+        settings.SensitiveAdminRateLimitPermitLimit.Should().Be(30);
+        settings.SensitiveAdminRateLimitWindowSeconds.Should().Be(60);
+        settings.SensitiveAdminRateLimitQueueLimit.Should().Be(0);
+        settings.SensitiveAdminRateLimitCooldownSeconds.Should().Be(2);
+
         settings.AllowedIpRanges.Should().BeEmpty();
         settings.BlockedIpRanges.Should().BeEmpty();
         settings.GetAllowedIpRanges().Should().BeEmpty();
@@ -46,10 +60,24 @@ public class SecuritySettingsInvariantTests
         settings.IsPhoneOtpEnabled.Should().BeTrue();
         settings.OtpExpirationMinutes.Should().Be(10);
         settings.OtpMaxAttempts.Should().Be(3);
+
         settings.LoginRateLimitPermitLimit.Should().Be(5);
         settings.LoginRateLimitWindowSeconds.Should().Be(30);
+        settings.LoginRateLimitQueueLimit.Should().Be(0);
+        settings.LoginRateLimitCooldownSeconds.Should().Be(2);
+        settings.LoginLockoutFailureThreshold.Should().Be(5);
+        settings.LoginLockoutDurationSeconds.Should().Be(900);
+
         settings.RefreshTokenRateLimitPermitLimit.Should().Be(8);
         settings.RefreshTokenRateLimitWindowSeconds.Should().Be(45);
+        settings.RefreshTokenRateLimitQueueLimit.Should().Be(0);
+        settings.RefreshTokenRateLimitCooldownSeconds.Should().Be(2);
+
+        settings.SensitiveAdminRateLimitPermitLimit.Should().Be(30);
+        settings.SensitiveAdminRateLimitWindowSeconds.Should().Be(60);
+        settings.SensitiveAdminRateLimitQueueLimit.Should().Be(0);
+        settings.SensitiveAdminRateLimitCooldownSeconds.Should().Be(2);
+
         settings.GetAllowedIpRanges().Should().Equal("192.168.1.1", "10.0.0.0/24");
         settings.GetBlockedIpRanges().Should().Equal("172.16.0.1");
     }
@@ -99,6 +127,48 @@ public class SecuritySettingsInvariantTests
     }
 
     [Theory]
+    [InlineData(-1)]
+    public void Create_WhenLoginRateLimitQueueLimitIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(loginRateLimitQueueLimit: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*LoginRateLimitQueueLimit*greater than or equal to 0*");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    public void Create_WhenLoginRateLimitCooldownSecondsIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(loginRateLimitCooldownSeconds: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*LoginRateLimitCooldownSeconds*greater than or equal to 0*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WhenLoginLockoutFailureThresholdIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(loginLockoutFailureThreshold: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*LoginLockoutFailureThreshold*greater than 0*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WhenLoginLockoutDurationSecondsIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(loginLockoutDurationSeconds: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*LoginLockoutDurationSeconds*greater than 0*");
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(-1)]
     public void Create_WhenRefreshTokenRateLimitPermitLimitIsInvalid_ShouldThrow(int value)
@@ -118,6 +188,68 @@ public class SecuritySettingsInvariantTests
 
         act.Should().Throw<DomainException>()
             .WithMessage("*RefreshTokenRateLimitWindowSeconds*greater than 0*");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    public void Create_WhenRefreshTokenRateLimitQueueLimitIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(refreshTokenRateLimitQueueLimit: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*RefreshTokenRateLimitQueueLimit*greater than or equal to 0*");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    public void Create_WhenRefreshTokenRateLimitCooldownSecondsIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(refreshTokenRateLimitCooldownSeconds: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*RefreshTokenRateLimitCooldownSeconds*greater than or equal to 0*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WhenSensitiveAdminRateLimitPermitLimitIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(sensitiveAdminRateLimitPermitLimit: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitPermitLimit*greater than 0*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WhenSensitiveAdminRateLimitWindowSecondsIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(sensitiveAdminRateLimitWindowSeconds: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitWindowSeconds*greater than 0*");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    public void Create_WhenSensitiveAdminRateLimitQueueLimitIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(sensitiveAdminRateLimitQueueLimit: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitQueueLimit*greater than or equal to 0*");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    public void Create_WhenSensitiveAdminRateLimitCooldownSecondsIsInvalid_ShouldThrow(int value)
+    {
+        var act = () => CreateValidSettings(sensitiveAdminRateLimitCooldownSeconds: value);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*SensitiveAdminRateLimitCooldownSeconds*greater than or equal to 0*");
     }
 
     [Theory]
@@ -182,8 +314,18 @@ public class SecuritySettingsInvariantTests
             otpMaxAttempts: 4,
             loginRateLimitPermitLimit: 6,
             loginRateLimitWindowSeconds: 90,
+            loginRateLimitQueueLimit: 1,
+            loginRateLimitCooldownSeconds: 3,
+            loginLockoutFailureThreshold: 7,
+            loginLockoutDurationSeconds: 600,
             refreshTokenRateLimitPermitLimit: 12,
             refreshTokenRateLimitWindowSeconds: 120,
+            refreshTokenRateLimitQueueLimit: 2,
+            refreshTokenRateLimitCooldownSeconds: 4,
+            sensitiveAdminRateLimitPermitLimit: 40,
+            sensitiveAdminRateLimitWindowSeconds: 180,
+            sensitiveAdminRateLimitQueueLimit: 1,
+            sensitiveAdminRateLimitCooldownSeconds: 5,
             allowedIpRanges: new[] { "192.168.10.0/24" },
             blockedIpRanges: new[] { "10.10.10.10" },
             nowUtc: updatedAt,
@@ -195,10 +337,24 @@ public class SecuritySettingsInvariantTests
         settings.IsPhoneOtpEnabled.Should().BeFalse();
         settings.OtpExpirationMinutes.Should().Be(15);
         settings.OtpMaxAttempts.Should().Be(4);
+
         settings.LoginRateLimitPermitLimit.Should().Be(6);
         settings.LoginRateLimitWindowSeconds.Should().Be(90);
+        settings.LoginRateLimitQueueLimit.Should().Be(1);
+        settings.LoginRateLimitCooldownSeconds.Should().Be(3);
+        settings.LoginLockoutFailureThreshold.Should().Be(7);
+        settings.LoginLockoutDurationSeconds.Should().Be(600);
+
         settings.RefreshTokenRateLimitPermitLimit.Should().Be(12);
         settings.RefreshTokenRateLimitWindowSeconds.Should().Be(120);
+        settings.RefreshTokenRateLimitQueueLimit.Should().Be(2);
+        settings.RefreshTokenRateLimitCooldownSeconds.Should().Be(4);
+
+        settings.SensitiveAdminRateLimitPermitLimit.Should().Be(40);
+        settings.SensitiveAdminRateLimitWindowSeconds.Should().Be(180);
+        settings.SensitiveAdminRateLimitQueueLimit.Should().Be(1);
+        settings.SensitiveAdminRateLimitCooldownSeconds.Should().Be(5);
+
         settings.GetAllowedIpRanges().Should().Equal("192.168.10.0/24");
         settings.GetBlockedIpRanges().Should().Equal("10.10.10.10");
         settings.UpdatedAt.Should().Be(updatedAt);
@@ -219,8 +375,18 @@ public class SecuritySettingsInvariantTests
             otpMaxAttempts: 5,
             loginRateLimitPermitLimit: 10,
             loginRateLimitWindowSeconds: 60,
+            loginRateLimitQueueLimit: 0,
+            loginRateLimitCooldownSeconds: 2,
+            loginLockoutFailureThreshold: 5,
+            loginLockoutDurationSeconds: 900,
             refreshTokenRateLimitPermitLimit: 10,
             refreshTokenRateLimitWindowSeconds: 60,
+            refreshTokenRateLimitQueueLimit: 0,
+            refreshTokenRateLimitCooldownSeconds: 2,
+            sensitiveAdminRateLimitPermitLimit: 30,
+            sensitiveAdminRateLimitWindowSeconds: 60,
+            sensitiveAdminRateLimitQueueLimit: 0,
+            sensitiveAdminRateLimitCooldownSeconds: 2,
             allowedIpRanges: Array.Empty<string>(),
             blockedIpRanges: Array.Empty<string>(),
             nowUtc: Now.AddMinutes(10),
@@ -246,8 +412,18 @@ public class SecuritySettingsInvariantTests
         int otpMaxAttempts = 3,
         int loginRateLimitPermitLimit = 5,
         int loginRateLimitWindowSeconds = 30,
+        int loginRateLimitQueueLimit = 0,
+        int loginRateLimitCooldownSeconds = 2,
+        int loginLockoutFailureThreshold = 5,
+        int loginLockoutDurationSeconds = 900,
         int refreshTokenRateLimitPermitLimit = 8,
         int refreshTokenRateLimitWindowSeconds = 45,
+        int refreshTokenRateLimitQueueLimit = 0,
+        int refreshTokenRateLimitCooldownSeconds = 2,
+        int sensitiveAdminRateLimitPermitLimit = 30,
+        int sensitiveAdminRateLimitWindowSeconds = 60,
+        int sensitiveAdminRateLimitQueueLimit = 0,
+        int sensitiveAdminRateLimitCooldownSeconds = 2,
         string[]? allowedIpRanges = null,
         string[]? blockedIpRanges = null,
         bool isEmailOtpEnabled = true,
@@ -262,8 +438,18 @@ public class SecuritySettingsInvariantTests
             otpMaxAttempts: otpMaxAttempts,
             loginRateLimitPermitLimit: loginRateLimitPermitLimit,
             loginRateLimitWindowSeconds: loginRateLimitWindowSeconds,
+            loginRateLimitQueueLimit: loginRateLimitQueueLimit,
+            loginRateLimitCooldownSeconds: loginRateLimitCooldownSeconds,
+            loginLockoutFailureThreshold: loginLockoutFailureThreshold,
+            loginLockoutDurationSeconds: loginLockoutDurationSeconds,
             refreshTokenRateLimitPermitLimit: refreshTokenRateLimitPermitLimit,
             refreshTokenRateLimitWindowSeconds: refreshTokenRateLimitWindowSeconds,
+            refreshTokenRateLimitQueueLimit: refreshTokenRateLimitQueueLimit,
+            refreshTokenRateLimitCooldownSeconds: refreshTokenRateLimitCooldownSeconds,
+            sensitiveAdminRateLimitPermitLimit: sensitiveAdminRateLimitPermitLimit,
+            sensitiveAdminRateLimitWindowSeconds: sensitiveAdminRateLimitWindowSeconds,
+            sensitiveAdminRateLimitQueueLimit: sensitiveAdminRateLimitQueueLimit,
+            sensitiveAdminRateLimitCooldownSeconds: sensitiveAdminRateLimitCooldownSeconds,
             allowedIpRanges: allowedIpRanges ?? Array.Empty<string>(),
             blockedIpRanges: blockedIpRanges ?? Array.Empty<string>(),
             nowUtc: Now,

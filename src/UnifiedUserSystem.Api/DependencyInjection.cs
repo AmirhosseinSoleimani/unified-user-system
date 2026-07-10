@@ -80,6 +80,7 @@ public static class DependencyInjection
     private static IServiceCollection AddApiMiddlewares(this IServiceCollection services)
     {
         services.AddScoped<ExceptionHandlingMiddleware>();
+        services.AddScoped<SecurityRateLimitingMiddleware>();
 
         return services;
     }

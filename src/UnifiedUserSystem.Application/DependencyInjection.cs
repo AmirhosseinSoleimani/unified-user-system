@@ -2,7 +2,6 @@
 using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.Application.Services.Authentication;
 using UnifiedUserSystem.Application.Services.Authorization;
-using UnifiedUserSystem.Application.Services.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Services.Auditing;
@@ -37,6 +36,7 @@ public static class DependencyInjection
     private static IServiceCollection AddApplicationSecurity(this IServiceCollection services)
     {
         services.AddScoped<IAuthProtectionService, AuthProtectionService>();
+        services.AddScoped<ISecurityRateLimitService, SecurityRateLimitService>();
         services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
         services.AddScoped<IPermissionCacheInvalidator, PermissionCacheInvalidator>();
         services.AddScoped<ISecuritySettingsService, SecuritySettingsService>();

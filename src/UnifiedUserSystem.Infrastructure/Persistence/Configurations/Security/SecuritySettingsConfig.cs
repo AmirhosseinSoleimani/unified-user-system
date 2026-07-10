@@ -58,5 +58,45 @@ public sealed class SecuritySettingsConfig : AuditableEntityConfig<SecuritySetti
             .HasColumnName("blocked_ip_ranges")
             .HasMaxLength(SecuritySettings.IpRangesMaxLength)
             .IsRequired();
+
+        builder.Property(x => x.LoginRateLimitQueueLimit)
+            .HasColumnName("login_rate_limit_queue_limit")
+            .IsRequired();
+
+        builder.Property(x => x.LoginRateLimitCooldownSeconds)
+            .HasColumnName("login_rate_limit_cooldown_seconds")
+            .IsRequired();
+
+        builder.Property(x => x.LoginLockoutFailureThreshold)
+            .HasColumnName("login_lockout_failure_threshold")
+            .IsRequired();
+
+        builder.Property(x => x.LoginLockoutDurationSeconds)
+            .HasColumnName("login_lockout_duration_seconds")
+            .IsRequired();
+
+        builder.Property(x => x.RefreshTokenRateLimitQueueLimit)
+            .HasColumnName("refresh_token_rate_limit_queue_limit")
+            .IsRequired();
+
+        builder.Property(x => x.RefreshTokenRateLimitCooldownSeconds)
+            .HasColumnName("refresh_token_rate_limit_cooldown_seconds")
+            .IsRequired();
+
+        builder.Property(x => x.SensitiveAdminRateLimitPermitLimit)
+            .HasColumnName("sensitive_admin_rate_limit_permit_limit")
+            .IsRequired();
+
+        builder.Property(x => x.SensitiveAdminRateLimitWindowSeconds)
+            .HasColumnName("sensitive_admin_rate_limit_window_seconds")
+            .IsRequired();
+
+        builder.Property(x => x.SensitiveAdminRateLimitQueueLimit)
+            .HasColumnName("sensitive_admin_rate_limit_queue_limit")
+            .IsRequired();
+
+        builder.Property(x => x.SensitiveAdminRateLimitCooldownSeconds)
+            .HasColumnName("sensitive_admin_rate_limit_cooldown_seconds")
+            .IsRequired();
     }
 }

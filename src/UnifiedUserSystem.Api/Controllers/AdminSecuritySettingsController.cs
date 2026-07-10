@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using UnifiedUserSystem.src.Application.Abstractions.Services;
-using UnifiedUserSystem.src.Contracts.DTOs.Security;
 using UnifiedUserSystem.src.Api.Controllers;
+using UnifiedUserSystem.src.Api.RateLimiting;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Security;
 using UnifiedUserSystem.src.Contracts.Common;
+using UnifiedUserSystem.src.Contracts.DTOs.Security;
 
 namespace UnifiedUserSystem.Api.Controllers;
 
@@ -36,7 +36,7 @@ public sealed class AdminSecuritySettingsController : AppControllerBase
     }
 
     [Authorize(Policy = OperationPolicyNames.SecuritySettingsUpdate)]
-    [EnableRateLimiting("SensitiveAdminRateLimit")]
+    [EnableSecurityRateLimiting(SecurityRateLimitPolicies.SensitiveAdmin)]
     [HttpPut]
     [ProducesResponseType(typeof(ApiResponse<SecuritySettingsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
