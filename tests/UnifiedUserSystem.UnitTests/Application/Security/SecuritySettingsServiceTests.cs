@@ -29,6 +29,8 @@ public class SecuritySettingsServiceTests
         response.Id.Should().Be(SecuritySettings.SingletonId);
         response.IsMfaEnabled.Should().BeFalse();
         response.IsOtpEnabled.Should().BeTrue();
+        response.IsEmailOtpEnabled.Should().BeTrue();
+        response.IsPhoneOtpEnabled.Should().BeTrue();
         response.OtpExpirationMinutes.Should().Be(5);
         response.OtpMaxAttempts.Should().Be(5);
         response.LoginRateLimitPermitLimit.Should().Be(10);
@@ -61,6 +63,8 @@ public class SecuritySettingsServiceTests
         response.Id.Should().Be(SecuritySettings.SingletonId);
         response.IsMfaEnabled.Should().BeTrue();
         response.IsOtpEnabled.Should().BeFalse();
+        response.IsEmailOtpEnabled.Should().BeTrue();
+        response.IsPhoneOtpEnabled.Should().BeTrue();
         response.OtpExpirationMinutes.Should().Be(10);
         response.OtpMaxAttempts.Should().Be(3);
         response.LoginRateLimitPermitLimit.Should().Be(7);
@@ -216,6 +220,8 @@ public class SecuritySettingsServiceTests
         response.Id.Should().Be(SecuritySettings.SingletonId);
         response.IsMfaEnabled.Should().Be(request.IsMfaEnabled);
         response.IsOtpEnabled.Should().Be(request.IsOtpEnabled);
+        response.IsEmailOtpEnabled.Should().Be(request.IsEmailOtpEnabled);
+        response.IsPhoneOtpEnabled.Should().Be(request.IsPhoneOtpEnabled);
         response.OtpExpirationMinutes.Should().Be(request.OtpExpirationMinutes);
         response.OtpMaxAttempts.Should().Be(request.OtpMaxAttempts);
         response.LoginRateLimitPermitLimit.Should().Be(request.LoginRateLimitPermitLimit);
@@ -250,6 +256,8 @@ public class SecuritySettingsServiceTests
         {
             IsMfaEnabled = true,
             IsOtpEnabled = false,
+            IsEmailOtpEnabled = true,
+            IsPhoneOtpEnabled = false,
             OtpExpirationMinutes = 15,
             OtpMaxAttempts = 4,
             LoginRateLimitPermitLimit = 6,
@@ -264,6 +272,8 @@ public class SecuritySettingsServiceTests
 
         response.IsMfaEnabled.Should().BeTrue();
         response.IsOtpEnabled.Should().BeFalse();
+        response.IsEmailOtpEnabled.Should().BeTrue();
+        response.IsPhoneOtpEnabled.Should().BeFalse();
         response.OtpExpirationMinutes.Should().Be(15);
         response.OtpMaxAttempts.Should().Be(4);
         response.LoginRateLimitPermitLimit.Should().Be(6);
@@ -280,10 +290,13 @@ public class SecuritySettingsServiceTests
         fixture.UnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+
     private static UpdateSecuritySettingsRequest ValidRequest() => new()
     {
         IsMfaEnabled = true,
         IsOtpEnabled = true,
+        IsEmailOtpEnabled = true,
+        IsPhoneOtpEnabled = true,
         OtpExpirationMinutes = 5,
         OtpMaxAttempts = 5,
         LoginRateLimitPermitLimit = 10,
@@ -304,11 +317,15 @@ public class SecuritySettingsServiceTests
         int refreshTokenRateLimitPermitLimit,
         int refreshTokenRateLimitWindowSeconds,
         string[] allowedIpRanges,
-        string[] blockedIpRanges)
+        string[] blockedIpRanges,
+        bool isEmailOtpEnabled = true,
+        bool isPhoneOtpEnabled = true)
     {
         return SecuritySettings.Create(
             isMfaEnabled,
             isOtpEnabled,
+            isEmailOtpEnabled,
+            isPhoneOtpEnabled,
             otpExpirationMinutes,
             otpMaxAttempts,
             loginRateLimitPermitLimit,
@@ -358,4 +375,6 @@ public class SecuritySettingsServiceTests
         public Guid? UserId => ActorUserId;
         public bool IsAuthenticated => true;
     }
+
+
 }

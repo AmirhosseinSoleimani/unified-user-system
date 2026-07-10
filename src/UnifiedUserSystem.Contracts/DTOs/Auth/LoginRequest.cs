@@ -4,5 +4,6 @@
     {
         public string EmailOrUsername { get; set; } = default!;
         public string Password { get; set; } = default!;
+        public string? MfaChannel { get; set; }
     }
 }

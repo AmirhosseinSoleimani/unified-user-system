@@ -41,10 +41,10 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
         [HttpPost("login")]
         [EnableRateLimiting("AuthRateLimit")]
-        [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<ApiResponse<AuthResponse>>> Login(
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(
             [FromBody] LoginRequest req,
             CancellationToken ct)
         {
@@ -54,11 +54,30 @@ namespace UnifiedUserSystem.src.Api.Controllers
             var response = await _authService.LoginAsync(req, ct);
 
             if (response is null)
-                return UnauthorizedResponse<AuthResponse>("Authentication failed.");
+                return UnauthorizedResponse<LoginResponse>("Authentication failed.");
 
             return OkResponse(response);
         }
 
+        [HttpPost("mfa/verify")]
+        [EnableRateLimiting("AuthRateLimit")]
+        [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyMfa(
+            [FromBody] VerifyMfaRequest req,
+            CancellationToken ct)
+        {
+            if (req is null)
+                throw new DomainException("Request is null.");
+
+            var response = await _authService.VerifyMfaAsync(req, ct);
+
+            if (response is null)
+                return UnauthorizedResponse<AuthResponse>("MFA verification failed.");
+
+            return OkResponse(response);
+        }
 
         [HttpPost("refresh")]
         [EnableRateLimiting("AuthRateLimit")]

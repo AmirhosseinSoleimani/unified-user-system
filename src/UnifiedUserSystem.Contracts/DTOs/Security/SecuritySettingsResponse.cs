@@ -6,6 +6,8 @@ public sealed class SecuritySettingsResponse
     public Guid Id { get; set; }
     public bool IsMfaEnabled { get; set; }
     public bool IsOtpEnabled { get; set; }
+    public bool IsEmailOtpEnabled { get; set; }
+    public bool IsPhoneOtpEnabled { get; set; }
     public int OtpExpirationMinutes { get; set; }
     public int OtpMaxAttempts { get; set; }
     public int LoginRateLimitPermitLimit { get; set; }

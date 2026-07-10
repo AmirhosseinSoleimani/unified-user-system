@@ -56,6 +56,8 @@ public sealed class SecuritySettingsService : ISecuritySettingsService
             settings = SecuritySettings.Create(
                 request.IsMfaEnabled,
                 request.IsOtpEnabled,
+                request.IsEmailOtpEnabled,
+                request.IsPhoneOtpEnabled,
                 request.OtpExpirationMinutes,
                 request.OtpMaxAttempts,
                 request.LoginRateLimitPermitLimit,
@@ -74,6 +76,8 @@ public sealed class SecuritySettingsService : ISecuritySettingsService
             settings.Update(
                 request.IsMfaEnabled,
                 request.IsOtpEnabled,
+                request.IsEmailOtpEnabled,
+                request.IsPhoneOtpEnabled,
                 request.OtpExpirationMinutes,
                 request.OtpMaxAttempts,
                 request.LoginRateLimitPermitLimit,
@@ -96,6 +100,8 @@ public sealed class SecuritySettingsService : ISecuritySettingsService
         return SecuritySettings.Create(
             _defaults.IsMfaEnabled,
             _defaults.IsOtpEnabled,
+            _defaults.IsPhoneOtpEnabled,
+            _defaults.IsEmailOtpEnabled,
             _defaults.OtpExpirationMinutes,
             _defaults.OtpMaxAttempts,
             _defaults.LoginRateLimitPermitLimit,
@@ -115,6 +121,8 @@ public sealed class SecuritySettingsService : ISecuritySettingsService
             Id = settings.Id,
             IsMfaEnabled = settings.IsMfaEnabled,
             IsOtpEnabled = settings.IsOtpEnabled,
+            IsEmailOtpEnabled = settings.IsEmailOtpEnabled,
+            IsPhoneOtpEnabled = settings.IsPhoneOtpEnabled,
             OtpExpirationMinutes = settings.OtpExpirationMinutes,
             OtpMaxAttempts = settings.OtpMaxAttempts,
             LoginRateLimitPermitLimit = settings.LoginRateLimitPermitLimit,

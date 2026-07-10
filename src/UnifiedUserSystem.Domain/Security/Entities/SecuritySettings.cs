@@ -10,6 +10,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
 
     public bool IsMfaEnabled { get; private set; }
     public bool IsOtpEnabled { get; private set; }
+    public bool IsEmailOtpEnabled { get; private set; }
+    public bool IsPhoneOtpEnabled { get; private set; }
     public int OtpExpirationMinutes { get; private set; }
     public int OtpMaxAttempts { get; private set; }
     public int LoginRateLimitPermitLimit { get; private set; }
@@ -28,6 +30,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
         return Create(
             isMfaEnabled: false,
             isOtpEnabled: true,
+            isEmailOtpEnabled: true,
+            isPhoneOtpEnabled: true,
             otpExpirationMinutes: 5,
             otpMaxAttempts: 5,
             loginRateLimitPermitLimit: 10,
@@ -43,6 +47,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
     public static SecuritySettings Create(
     bool isMfaEnabled,
     bool isOtpEnabled,
+    bool isEmailOtpEnabled,
+    bool isPhoneOtpEnabled,
     int otpExpirationMinutes,
     int otpMaxAttempts,
     int loginRateLimitPermitLimit,
@@ -62,6 +68,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
         settings.Apply(
             isMfaEnabled,
             isOtpEnabled,
+            isEmailOtpEnabled,
+            isPhoneOtpEnabled,
             otpExpirationMinutes,
             otpMaxAttempts,
             loginRateLimitPermitLimit,
@@ -80,6 +88,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
     public void Update(
     bool isMfaEnabled,
     bool isOtpEnabled,
+    bool isEmailOtpEnabled,
+    bool isPhoneOtpEnabled,
     int otpExpirationMinutes,
     int otpMaxAttempts,
     int loginRateLimitPermitLimit,
@@ -94,6 +104,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
         Apply(
             isMfaEnabled,
             isOtpEnabled,
+            isEmailOtpEnabled,
+            isPhoneOtpEnabled,
             otpExpirationMinutes,
             otpMaxAttempts,
             loginRateLimitPermitLimit,
@@ -115,6 +127,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
     private void Apply(
     bool isMfaEnabled,
     bool isOtpEnabled,
+    bool isEmailOtpEnabled,
+    bool isPhoneOtpEnabled,
     int otpExpirationMinutes,
     int otpMaxAttempts,
     int loginRateLimitPermitLimit,
@@ -148,6 +162,8 @@ public sealed class SecuritySettings : AuditableEntity<Guid>
 
         IsMfaEnabled = isMfaEnabled;
         IsOtpEnabled = isOtpEnabled;
+        IsEmailOtpEnabled = isEmailOtpEnabled;
+        IsPhoneOtpEnabled = isPhoneOtpEnabled;
         OtpExpirationMinutes = otpExpirationMinutes;
         OtpMaxAttempts = otpMaxAttempts;
         LoginRateLimitPermitLimit = loginRateLimitPermitLimit;

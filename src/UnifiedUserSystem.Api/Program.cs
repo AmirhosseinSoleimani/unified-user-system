@@ -10,6 +10,7 @@ using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application;
 using UnifiedUserSystem.src.Contracts.Common;
 using UnifiedUserSystem.src.Infrastructure.Security;
+using MfaOptions = UnifiedUserSystem.src.Application.Options.MfaOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,9 @@ builder.Services.Configure<PermissionEvaluationOptions>(
 
 builder.Services.Configure<SecuritySettingsDefaultsOptions>(
     builder.Configuration.GetSection("SecuritySettingsDefaults"));
+
+builder.Services.Configure<MfaOptions>(
+    builder.Configuration.GetSection("Mfa"));
 
 var disableSecurityRateLimiting =
     builder.Configuration.GetValue<bool>("DisableSecurityRateLimiting");

@@ -1,12 +1,17 @@
-﻿using UnifiedUserSystem.src.Contracts.DTOs.Auth;
+﻿using UnifiedUserSystem.src.Application.Abstractions.Persistence;
+using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
+using UnifiedUserSystem.src.Application.Abstractions.Time;
+using UnifiedUserSystem.src.Application.Abstractions.Web;
+using UnifiedUserSystem.src.Application.Options;
+using UnifiedUserSystem.src.Application.Validation;
+using UnifiedUserSystem.src.Contracts.DTOs.Auth;
+using UnifiedUserSystem.src.Contracts.DTOs.Security;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
-using UnifiedUserSystem.src.Application.Validation;
-using UnifiedUserSystem.src.Application.Abstractions.Persistence;
-using UnifiedUserSystem.src.Application.Abstractions.Security;
-using UnifiedUserSystem.src.Application.Abstractions.Web;
-using UnifiedUserSystem.src.Application.Abstractions.Time;
-using UnifiedUserSystem.src.Application.Abstractions.Services;
+using UnifiedUserSystem.src.Domain.Security.Entities;
+using UnifiedUserSystem.src.Domain.Security.Enums;
+using Microsoft.Extensions.Options;
 
 
 namespace UnifiedUserSystem.Application.Services.Authentication;
@@ -23,6 +28,13 @@ public class AuthService : IAuthService
     private readonly ICurrentUser _currentUser;
     private readonly IClientContext _clientContext;
     private readonly IAuthProtectionService _authProtectionService;
+    private readonly ISecuritySettingsService _securitySettingsService;
+    private readonly IOtpGenerator _otpGenerator;
+    private readonly IOtpHasher _otpHasher;
+    private readonly IEmailOtpSender _emailOtpSender;
+    private readonly ISmsOtpSender _smsOtpSender;
+    private readonly MfaOptions _mfaOptions;
+
 
     public AuthService(
         IUnitOfWork uow,
@@ -34,8 +46,14 @@ public class AuthService : IAuthService
         IClock clock,
         ICurrentUser currentUser,
         IClientContext clientContext,
-        IAuthProtectionService authProtectionService)
-    {
+        IAuthProtectionService authProtectionService,
+        ISecuritySettingsService securitySettingsService,
+        IOtpGenerator otpGenerator,
+        IOtpHasher otpHasher,
+        IEmailOtpSender emailOtpSender,
+        ISmsOtpSender smsOtpSender,
+        IOptions<MfaOptions> mfaOptions)
+        {
         _uow = uow;
         _hasher = hasher;
         _registrationValidator = registrationValidator;
@@ -46,6 +64,12 @@ public class AuthService : IAuthService
         _currentUser = currentUser;
         _clientContext = clientContext;
         _authProtectionService = authProtectionService;
+        _securitySettingsService = securitySettingsService;
+        _otpGenerator = otpGenerator;
+        _otpHasher = otpHasher;
+        _emailOtpSender = emailOtpSender;
+        _smsOtpSender = smsOtpSender;
+        _mfaOptions = mfaOptions.Value;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest req, CancellationToken ct = default)
@@ -57,7 +81,7 @@ public class AuthService : IAuthService
         var firstName = req.FirstName;
         var lastName = req.LastName;
 
-        if ((string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName)) && 
+        if ((string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName)) &&
             !string.IsNullOrWhiteSpace(req.FullName))
         {
             (firstName, lastName) = User.SplitFullName(req.FullName);
@@ -108,8 +132,7 @@ public class AuthService : IAuthService
             fallbackRoles: new[] { role.Name }
             );
     }
-
-    public async Task<AuthResponse?> LoginAsync(LoginRequest req, CancellationToken ct = default)
+    public async Task<LoginResponse?> LoginAsync(LoginRequest req, CancellationToken ct = default)
     {
         _loginValidator.Validate(req);
 
@@ -145,19 +168,54 @@ public class AuthService : IAuthService
             return null;
         }
 
+        var settings = await _securitySettingsService.GetEffectiveAsync(ct);
+
+        if (!settings.IsMfaEnabled)
+        {
+            var authResponse = await IssueTokensAsync(user, ct);
+
+            await _authProtectionService.ResetAsync(
+                normalizedLoginIdentifier,
+                _clientContext,
+                ct);
+
+            await _uow.SaveChangesAsync(ct);
+
+            return LoginResponse.Authenticated(authResponse);
+        }
+
+        var availableChannels = GetAvailableMfaChannels(settings);
+
+        if (availableChannels.Length == 0)
+            throw new DomainException("MFA is enabled but no OTP channel is enabled.");
+
+        var selectedChannel = ResolveRequestedChannel(req.MfaChannel, availableChannels);
+        var otpCode = _otpGenerator.Generate(_mfaOptions.OtpLength);
         var now = _clock.Utcnow;
-        var refreshToken = _refreshTokenService.GenerateToken();
+        var expiresAt = now.AddMinutes(settings.OtpExpirationMinutes);
 
-        var refreshSession = CreateRefreshTokenSession(
+        var challenge = MfaChallenge.Create(
             user.Id,
-            refreshToken,
+            selectedChannel,
+            "pending",
             now,
-            _clientContext.DeviceName,
-            _clientContext.UserAgent,
-            _clientContext.IpAddress,
-            _clientContext.ClientId);
+            expiresAt,
+            settings.OtpMaxAttempts,
+            user.Id);
 
-        _uow.RefreshTokenSessions.Add(refreshSession);
+        var otpHash = _otpHasher.Hash(otpCode, challenge.Id);
+        challenge = MfaChallenge.Create(
+            user.Id,
+            selectedChannel,
+            otpHash,
+            now,
+            expiresAt,
+            settings.OtpMaxAttempts,
+            user.Id);
+
+        _uow.MfaChallenges.Add(challenge);
+
+        await SendOtpAsync(user, selectedChannel, otpCode, expiresAt, ct);
 
         await _authProtectionService.ResetAsync(
             normalizedLoginIdentifier,
@@ -166,8 +224,50 @@ public class AuthService : IAuthService
 
         await _uow.SaveChangesAsync(ct);
 
-        var accessToken = _jwt.CreateAccessToken(user);
-        return BuildAuthResponse(user, accessToken, refreshToken, refreshSession.ExpiresAtUtc);
+        return LoginResponse.Challenge(new MfaChallengeResponse
+        {
+            ChallengeId = challenge.Id,
+            Channel = selectedChannel.ToString(),
+            AvailableChannels = availableChannels.Select(x => x.ToString()).ToArray(),
+            ExpiresAt = expiresAt
+        });
+    }
+
+    public async Task<AuthResponse?> VerifyMfaAsync(VerifyMfaRequest req, CancellationToken ct = default)
+    {
+        if (req is null)
+            throw new DomainException("Request is null.");
+
+        if (req.ChallengeId == Guid.Empty)
+            throw new DomainException("ChallengeId is required.");
+
+        Guard.NotEmpty(req.OtpCode, nameof(req.OtpCode));
+
+        var challenge = await _uow.MfaChallenges.FindByIdAsync(req.ChallengeId, ct);
+        if (challenge is null || challenge.User is null || !challenge.User.IsActive)
+            return null;
+
+        var settings = await _securitySettingsService.GetEffectiveAsync(ct);
+        var availableChannels = GetAvailableMfaChannels(settings);
+
+        if (!settings.IsMfaEnabled || !availableChannels.Contains(challenge.Channel))
+            throw new DomainException("MFA channel is disabled.");
+
+        var now = _clock.Utcnow;
+        var otpMatches = _otpHasher.Verify(req.OtpCode, challenge.Id, challenge.OtpHash);
+
+        challenge.Verify(otpMatches, now, challenge.UserId);
+
+        if (!otpMatches)
+        {
+            await _uow.SaveChangesAsync(ct);
+            return null;
+        }
+
+        var response = await IssueTokensAsync(challenge.User, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        return response;
     }
 
     public async Task<AuthResponse?> RefreshAsync(RefreshTokenRequest req, CancellationToken ct = default)
@@ -359,6 +459,77 @@ public class AuthService : IAuthService
             if (sessionsById.TryGetValue(replacementSessionId, out var replacementSession))
                 stack.Push(replacementSession);
         }
+    }
+
+    private async Task<AuthResponse> IssueTokensAsync(User user, CancellationToken ct)
+    {
+        var now = _clock.Utcnow;
+        var refreshToken = _refreshTokenService.GenerateToken();
+
+        var refreshSession = CreateRefreshTokenSession(
+            user.Id,
+            refreshToken,
+            now,
+            _clientContext.DeviceName,
+            _clientContext.UserAgent,
+            _clientContext.IpAddress,
+            _clientContext.ClientId);
+
+        _uow.RefreshTokenSessions.Add(refreshSession);
+
+        var accessToken = _jwt.CreateAccessToken(user);
+        return BuildAuthResponse(user, accessToken, refreshToken, refreshSession.ExpiresAtUtc);
+    }
+
+    private static MfaChannel[] GetAvailableMfaChannels(SecuritySettingsResponse settings)
+    {
+        if (!settings.IsMfaEnabled || !settings.IsOtpEnabled)
+            return Array.Empty<MfaChannel>();
+
+        var channels = new List<MfaChannel>();
+
+        if (settings.IsEmailOtpEnabled)
+            channels.Add(MfaChannel.Email);
+
+        if (settings.IsPhoneOtpEnabled)
+            channels.Add(MfaChannel.Phone);
+
+        return channels.ToArray();
+    }
+
+    private static MfaChannel ResolveRequestedChannel(string? requestedChannel, MfaChannel[] availableChannels)
+    {
+        if (availableChannels.Length == 0)
+            throw new DomainException("No MFA channels are available.");
+
+        if (string.IsNullOrWhiteSpace(requestedChannel))
+            return availableChannels[0];
+
+        if (!Enum.TryParse<MfaChannel>(requestedChannel.Trim(), ignoreCase: true, out var parsed) ||
+            !Enum.IsDefined(typeof(MfaChannel), parsed))
+        {
+            throw new DomainException("MFA channel is invalid.");
+        }
+
+        if (!availableChannels.Contains(parsed))
+            throw new DomainException("MFA channel is disabled.");
+
+        return parsed;
+    }
+
+    private Task SendOtpAsync(
+        User user,
+        MfaChannel channel,
+        string otpCode,
+        DateTimeOffset expiresAt,
+        CancellationToken ct)
+    {
+        return channel switch
+        {
+            MfaChannel.Email => _emailOtpSender.SendAsync(user, otpCode, expiresAt, ct),
+            MfaChannel.Phone => _smsOtpSender.SendAsync(user, otpCode, expiresAt, ct),
+            _ => throw new DomainException("MFA channel is invalid.")
+        };
     }
 
     private static string NormalizeLoginIdentifier(string emailOrUsername)

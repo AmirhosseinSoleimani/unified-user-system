@@ -5,6 +5,8 @@ public sealed class SecuritySettingsDefaultsOptions
 {
     public bool IsMfaEnabled { get; set; } = false;
     public bool IsOtpEnabled { get; set; } = true;
+    public bool IsEmailOtpEnabled { get; set; } = true;
+    public bool IsPhoneOtpEnabled { get; set; } = true;
     public int OtpExpirationMinutes { get; set; } = 5;
     public int OtpMaxAttempts { get; set; } = 5;
     public int LoginRateLimitPermitLimit { get; set; } = 10;

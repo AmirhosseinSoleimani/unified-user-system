@@ -17,6 +17,8 @@ public class SecuritySettingsInvariantTests
         settings.Id.Should().Be(SecuritySettings.SingletonId);
         settings.IsMfaEnabled.Should().BeFalse();
         settings.IsOtpEnabled.Should().BeTrue();
+        settings.IsEmailOtpEnabled.Should().BeTrue();
+        settings.IsPhoneOtpEnabled.Should().BeTrue();
         settings.OtpExpirationMinutes.Should().Be(5);
         settings.OtpMaxAttempts.Should().Be(5);
         settings.LoginRateLimitPermitLimit.Should().Be(10);
@@ -40,6 +42,8 @@ public class SecuritySettingsInvariantTests
 
         settings.IsMfaEnabled.Should().BeTrue();
         settings.IsOtpEnabled.Should().BeTrue();
+        settings.IsEmailOtpEnabled.Should().BeTrue();
+        settings.IsPhoneOtpEnabled.Should().BeTrue();
         settings.OtpExpirationMinutes.Should().Be(10);
         settings.OtpMaxAttempts.Should().Be(3);
         settings.LoginRateLimitPermitLimit.Should().Be(5);
@@ -172,6 +176,8 @@ public class SecuritySettingsInvariantTests
         settings.Update(
             isMfaEnabled: false,
             isOtpEnabled: false,
+            isEmailOtpEnabled: true,
+            isPhoneOtpEnabled: false,
             otpExpirationMinutes: 15,
             otpMaxAttempts: 4,
             loginRateLimitPermitLimit: 6,
@@ -185,6 +191,8 @@ public class SecuritySettingsInvariantTests
 
         settings.IsMfaEnabled.Should().BeFalse();
         settings.IsOtpEnabled.Should().BeFalse();
+        settings.IsEmailOtpEnabled.Should().BeTrue();
+        settings.IsPhoneOtpEnabled.Should().BeFalse();
         settings.OtpExpirationMinutes.Should().Be(15);
         settings.OtpMaxAttempts.Should().Be(4);
         settings.LoginRateLimitPermitLimit.Should().Be(6);
@@ -205,6 +213,8 @@ public class SecuritySettingsInvariantTests
         var act = () => settings.Update(
             isMfaEnabled: true,
             isOtpEnabled: true,
+            isEmailOtpEnabled: true,
+            isPhoneOtpEnabled: true,
             otpExpirationMinutes: 0,
             otpMaxAttempts: 5,
             loginRateLimitPermitLimit: 10,
@@ -220,6 +230,17 @@ public class SecuritySettingsInvariantTests
             .WithMessage("*OtpExpirationMinutes*greater than 0*");
     }
 
+    [Fact]
+    public void Create_Should_StoreEmailAndPhoneOtpChannelFlags()
+    {
+        var settings = CreateValidSettings(
+            isEmailOtpEnabled: true,
+            isPhoneOtpEnabled: false);
+
+        settings.IsEmailOtpEnabled.Should().BeTrue();
+        settings.IsPhoneOtpEnabled.Should().BeFalse();
+    }
+
     private static SecuritySettings CreateValidSettings(
         int otpExpirationMinutes = 10,
         int otpMaxAttempts = 3,
@@ -228,11 +249,15 @@ public class SecuritySettingsInvariantTests
         int refreshTokenRateLimitPermitLimit = 8,
         int refreshTokenRateLimitWindowSeconds = 45,
         string[]? allowedIpRanges = null,
-        string[]? blockedIpRanges = null)
+        string[]? blockedIpRanges = null,
+        bool isEmailOtpEnabled = true,
+        bool isPhoneOtpEnabled = true)
     {
         return SecuritySettings.Create(
             isMfaEnabled: true,
             isOtpEnabled: true,
+            isEmailOtpEnabled: isEmailOtpEnabled,
+            isPhoneOtpEnabled: isPhoneOtpEnabled,
             otpExpirationMinutes: otpExpirationMinutes,
             otpMaxAttempts: otpMaxAttempts,
             loginRateLimitPermitLimit: loginRateLimitPermitLimit,

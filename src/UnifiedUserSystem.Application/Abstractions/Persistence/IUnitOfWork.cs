@@ -11,5 +11,6 @@ public interface IUnitOfWork
     IAuditLogRepository AuditLogs { get; }
     IRefreshTokenSessionRepository RefreshTokenSessions { get; }
     ISecuritySettingsRepository SecuritySettings { get; }
+    IMfaChallengeRepository MfaChallenges { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenSessionRepository, RefreshTokenSessionRepository>();
         services.AddScoped<IPermissionReadRepository, EfPermissionReadRepository>();
         services.AddScoped<ISecuritySettingsRepository, SecuritySettingsRepository>();
+        services.AddScoped<IMfaChallengeRepository, MfaChallengeRepository>();
 
         return services;
     }
@@ -60,9 +61,12 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-
         services.AddSingleton<ITemporarySecurityStateStore, MemoryTemporarySecurityStateStore>();
         services.AddSingleton<IPermissionCache, MemoryPermissionCache>();
+        services.AddScoped<IOtpGenerator, OtpGenerator>();
+        services.AddScoped<IOtpHasher, Sha256OtpHasher>();
+        services.AddScoped<IEmailOtpSender, DevelopmentEmailOtpSender>();
+        services.AddScoped<ISmsOtpSender, DevelopmentSmsOtpSender>();
 
         return services;
     }
