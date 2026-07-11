@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using UnifiedUserSystem.src.Api.Authorization;
 using UnifiedUserSystem.src.Api.Middlewares;
+using UnifiedUserSystem.src.Api.Options;
 
 namespace UnifiedUserSystem.Api;
 
@@ -81,6 +83,8 @@ public static class DependencyInjection
     {
         services.AddScoped<ExceptionHandlingMiddleware>();
         services.AddScoped<SecurityRateLimitingMiddleware>();
+        services.AddScoped<IpAccessControlMiddleware>();
+        services.AddSingleton<IConfigureOptions<ForwardedHeadersOptions>, ForwardedHeadersOptionsSetup>();
 
         return services;
     }

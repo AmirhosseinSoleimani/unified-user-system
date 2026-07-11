@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using UnifiedUserSystem.src.Application.Abstractions.Services;
+using UnifiedUserSystem.Application.Abstractions.Services;
 using UnifiedUserSystem.Application.Services.Authentication;
 using UnifiedUserSystem.Application.Services.Authorization;
 using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Services.Auditing;
 using UnifiedUserSystem.src.Application.Services.Identity;
 using UnifiedUserSystem.src.Application.Services.Security;
@@ -40,6 +41,9 @@ public static class DependencyInjection
         services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
         services.AddScoped<IPermissionCacheInvalidator, PermissionCacheInvalidator>();
         services.AddScoped<ISecuritySettingsService, SecuritySettingsService>();
+        services.AddScoped<IIpManagementService, IpManagementService>();
+        services.AddScoped<IIpAccessPolicyService, IpAccessPolicyService>();
+        services.AddScoped<IIpSecurityReportService, IpSecurityReportService>();
 
         return services;
     }

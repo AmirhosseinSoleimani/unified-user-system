@@ -40,6 +40,12 @@ public static class OperationPolicyNames
     public const string SecuritySettingsRead = "OP:security-settings.read";
     public const string SecuritySettingsUpdate = "OP:security-settings.update";
 
+    public const string IpRulesRead = "OP:ip-rules.read";
+    public const string IpRulesCreate = "OP:ip-rules.create";
+    public const string IpRulesUpdate = "OP:ip-rules.update";
+    public const string IpRulesDisable = "OP:ip-rules.disable";
+    public const string IpSecurityReportsRead = "OP:ip-security-reports.read";
+
     public static bool TryGetOperationKey(string? policyName, out string operationKey)
     {
         operationKey = string.Empty;

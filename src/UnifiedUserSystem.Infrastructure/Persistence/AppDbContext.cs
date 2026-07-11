@@ -32,6 +32,8 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<RefreshTokenSession> RefreshTokenSessions => Set<RefreshTokenSession>();
         public DbSet<SecuritySettings> SecuritySettings => Set<SecuritySettings>();
+        public DbSet<IpRule> IpRules => Set<IpRule>();
+        public DbSet<IpSecurityEvent> IpSecurityEvents => Set<IpSecurityEvent>();
         public DbSet<MfaChallenge> MfaChallenges => Set<MfaChallenge>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

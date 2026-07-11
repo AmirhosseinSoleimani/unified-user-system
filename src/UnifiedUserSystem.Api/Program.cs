@@ -60,19 +60,20 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseMiddleware<SecurityRateLimitingMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<IpAccessControlMiddleware>();
 
 app.UseRouting();
-
-app.UseMiddleware<SecurityRateLimitingMiddleware>();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
 
 app.Run();
 

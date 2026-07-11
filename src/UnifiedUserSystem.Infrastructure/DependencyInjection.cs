@@ -7,6 +7,7 @@ using UnifiedUserSystem.src.Application.Abstractions.Persistence;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Application.Abstractions.Web;
+using UnifiedUserSystem.src.Domain.Security.Entities;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
@@ -52,6 +53,8 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenSessionRepository, RefreshTokenSessionRepository>();
         services.AddScoped<IPermissionReadRepository, EfPermissionReadRepository>();
         services.AddScoped<ISecuritySettingsRepository, SecuritySettingsRepository>();
+        services.AddScoped<IIpRuleRepository, IpRuleRepository>();
+        services.AddScoped<IIpSecurityEventRepository, IpSecurityEventRepository>();
         services.AddScoped<IMfaChallengeRepository, MfaChallengeRepository>();
 
         return services;
