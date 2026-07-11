@@ -95,6 +95,7 @@ public class User : AuditableEntity<Guid>
         Touch(nowUtc, actorUserId ?? Id);
     }
 
+
     [Obsolete("Use ChangeProfile instead.")]
     public void ChangeFullName(string newFullName, DateTimeOffset nowUtc, Guid? actorUserId)
     {
