@@ -1,9 +1,4 @@
 ﻿using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Models;

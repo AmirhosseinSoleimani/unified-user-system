@@ -1,9 +1,4 @@
 ﻿using FluentAssertions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Domain.Common;
 

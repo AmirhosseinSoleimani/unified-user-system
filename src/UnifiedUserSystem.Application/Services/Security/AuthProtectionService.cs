@@ -1,10 +1,8 @@
-﻿using Microsoft.Extensions.Options;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Abstractions.Web;
-using UnifiedUserSystem.src.Application.Options;
 
 namespace UnifiedUserSystem.src.Application.Services.Security
 {

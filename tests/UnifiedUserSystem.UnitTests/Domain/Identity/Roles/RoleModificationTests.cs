@@ -1,5 +1,4 @@
-﻿
-using FluentAssertions;
+﻿using FluentAssertions;
 using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 
