@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+
 using SecuritySettingsEntity =
     UnifiedUserSystem.src.Domain.Security.Entities.SecuritySettings;
 
