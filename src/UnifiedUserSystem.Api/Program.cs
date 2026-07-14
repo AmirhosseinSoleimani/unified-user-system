@@ -2,11 +2,12 @@
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using UnifiedUserSystem.Api;
-using UnifiedUserSystem.src.Application.Options;
 using UnifiedUserSystem.Infrastructure;
 using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Application;
+using UnifiedUserSystem.src.Application.Options;
 using UnifiedUserSystem.src.Infrastructure.Security;
+using UnifiedUserSystemsrc.src.Application.Options;
 using MfaOptions = UnifiedUserSystem.src.Application.Options.MfaOptions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.Configure<ApplicationMetadataDefaultsOptions>(
+    builder.Configuration.GetSection("ApplicationMetadata"));
 
 builder.Services.Configure<AuthProtectionOptions>(
     builder.Configuration.GetSection("AuthProtection"));

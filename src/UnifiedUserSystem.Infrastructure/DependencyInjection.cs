@@ -12,6 +12,8 @@ using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Authorization;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Configuration;
+using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Localization;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Security;
 using UnifiedUserSystem.src.Infrastructure.Security;
 using UnifiedUserSystem.src.Infrastructure.Time;
@@ -56,6 +58,8 @@ public static class DependencyInjection
         services.AddScoped<IIpRuleRepository, IpRuleRepository>();
         services.AddScoped<IIpSecurityEventRepository, IpSecurityEventRepository>();
         services.AddScoped<IMfaChallengeRepository, MfaChallengeRepository>();
+        services.AddScoped<IApplicationMetadataRepository, ApplicationMetadataRepository>();
+        services.AddScoped<IErrorMessageRepository, ErrorMessageRepository>();
 
         return services;
     }

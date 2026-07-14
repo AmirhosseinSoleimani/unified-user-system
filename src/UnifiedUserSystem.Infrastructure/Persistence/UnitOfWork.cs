@@ -1,5 +1,7 @@
-﻿using UnifiedUserSystem.src.Application.Abstractions.Persistence;
-using UnifiedUserSystem.src.Application.Abstractions.Auditing;
+﻿using UnifiedUserSystem.src.Application.Abstractions.Auditing;
+using UnifiedUserSystem.src.Application.Abstractions.Persistence;
+using UnifiedUserSystem.src.Domain.Configuration.Entities;
+using UnifiedUserSystem.src.Domain.Localization.Entities;
 using UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence;
 
 namespace UnifiedUserSystem.src.Infrastructure.Persistence
@@ -18,7 +20,9 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
             ISecuritySettingsRepository securitySettings,
             IIpRuleRepository ipRules,
             IIpSecurityEventRepository ipSecurityEvents,
-            IMfaChallengeRepository mfaChallenges
+            IMfaChallengeRepository mfaChallenges,
+            IApplicationMetadataRepository applicationMetadata,
+            IErrorMessageRepository errorMessages
             )
         {
             _db = db;
@@ -32,6 +36,8 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
             IpRules = ipRules;
             IpSecurityEvents = ipSecurityEvents;
             MfaChallenges = mfaChallenges;
+            ApplicationMetadata = applicationMetadata;
+            ErrorMessages = errorMessages;
         }
         public IUserRepository Users { get; }
         public IRoleRepository Roles { get; }
@@ -43,6 +49,8 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence
         public IIpRuleRepository IpRules { get; }
         public IIpSecurityEventRepository IpSecurityEvents { get; }
         public IMfaChallengeRepository MfaChallenges { get; }
+        public IApplicationMetadataRepository ApplicationMetadata { get; }
+        public IErrorMessageRepository ErrorMessages { get; }
         public Task<int> SaveChangesAsync(CancellationToken ct = default) => _db.SaveChangesAsync(ct);
     }
 }

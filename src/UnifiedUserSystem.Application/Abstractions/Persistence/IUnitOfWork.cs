@@ -14,5 +14,7 @@ public interface IUnitOfWork
     IIpRuleRepository IpRules { get; }
     IIpSecurityEventRepository IpSecurityEvents { get; }
     IMfaChallengeRepository MfaChallenges { get; }
+    IApplicationMetadataRepository ApplicationMetadata { get; }
+    IErrorMessageRepository ErrorMessages { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

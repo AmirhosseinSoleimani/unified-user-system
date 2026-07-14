@@ -6,7 +6,9 @@ using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Services.Auditing;
+using UnifiedUserSystem.src.Application.Services.Configuration;
 using UnifiedUserSystem.src.Application.Services.Identity;
+using UnifiedUserSystem.src.Application.Services.Localization;
 using UnifiedUserSystem.src.Application.Services.Security;
 using UnifiedUserSystem.src.Application.Validation;
 
@@ -66,6 +68,14 @@ public static class DependencyInjection
 
         services.AddScoped<IOperationService, OperationService>();
         services.AddScoped<IPermissionService, PermissionService>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddApplicationMetadata(this IServiceCollection services)
+    {
+        services.AddScoped<IApplicationMetadataService, ApplicationMetadataService>();
+        services.AddScoped<IErrorMessageService, ErrorMessageService>();
 
         return services;
     }
