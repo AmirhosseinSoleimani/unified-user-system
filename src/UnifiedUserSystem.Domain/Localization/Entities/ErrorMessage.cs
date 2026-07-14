@@ -44,7 +44,7 @@ public sealed class ErrorMessage : AuditableEntity<Guid>
         DateTimeOffset nowUtc,
         Guid? actorUserId)
     {
-        Key = NormalizeRequired(key, nameof(Key), KeyMaxLength);
+        Key = NormalizeKey(key);
         EnglishText = NormalizeRequired(englishText, nameof(EnglishText), TextMaxLength);
         PersianText = NormalizeRequired(persianText, nameof(PersianText), TextMaxLength);
         IsActive = isActive;

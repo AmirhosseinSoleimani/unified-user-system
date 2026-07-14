@@ -5,9 +5,10 @@ using StackExchange.Redis;
 using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Persistence;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
+using UnifiedUserSystem.src.Application.Abstractions.Services;
 using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Application.Abstractions.Web;
-using UnifiedUserSystem.src.Domain.Security.Entities;
+using UnifiedUserSystem.src.Infrastructure.Localization;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
@@ -33,6 +34,7 @@ public static class DependencyInjection
             .AddPersistence(configuration)
             .AddSecurity(configuration)
             .AddWebContext()
+            .AddLocalizationCache()
             .AddSystemServices();
 
         return services;
@@ -94,6 +96,14 @@ public static class DependencyInjection
 
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IClientContext, ClientContext>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddLocalizationCache(this IServiceCollection services)
+    {
+        services.AddSingleton<ILocalizedMessageCache, LocalizedMessageCache>();
+        services.AddHostedService<LocalizedMessageCacheWarmupService>();
 
         return services;
     }
