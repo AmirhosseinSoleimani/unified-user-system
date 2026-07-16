@@ -47,6 +47,6 @@ public sealed class AdminSecuritySettingsController : AppControllerBase
         CancellationToken ct)
     {
         var settings = await _securitySettingsService.UpdateAsync(request, ct);
-        return OkResponse(settings, "Security settings updated successfully.");
+        return OkResponse(settings);
     }
 }

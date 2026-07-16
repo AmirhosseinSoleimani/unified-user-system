@@ -39,7 +39,7 @@ public sealed class AdminIpRulesController : AppControllerBase
         CancellationToken ct)
     {
         var rule = await _ipManagementService.CreateRuleAsync(request, ct);
-        return CreatedResponse(nameof(List), null, rule, "IP rule created successfully.");
+        return CreatedResponse(nameof(List), null, rule);
     }
 
     [Authorize(Policy = OperationPolicyNames.IpRulesUpdate)]
@@ -51,7 +51,7 @@ public sealed class AdminIpRulesController : AppControllerBase
         CancellationToken ct)
     {
         var rule = await _ipManagementService.UpdateRuleAsync(id, request, ct);
-        return OkResponse(rule, "IP rule updated successfully.");
+        return OkResponse(rule);
     }
 
     [Authorize(Policy = OperationPolicyNames.IpRulesDisable)]

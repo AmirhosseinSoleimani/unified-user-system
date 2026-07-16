@@ -63,15 +63,25 @@ builder.Services
             OnChallenge = async context =>
             {
                 context.HandleResponse();
+
+                var isExpiredToken =
+                    context.AuthenticateFailure is SecurityTokenExpiredException;
+
                 await WriteAuthenticationFailureAsync(
                     context.HttpContext,
                     StatusCodes.Status401Unauthorized,
-                    MessageCodes.Unauthorized);
+                    isExpiredToken
+                        ? MessageCodes.Unauthorized
+                        : MessageCodes.Unauthorized,
+                    isExpiredToken
+                        ? ApiResultCodes.TokenExpired
+                        : ApiResultCodes.AccessDenied);
             },
             OnForbidden = context => WriteAuthenticationFailureAsync(
                 context.HttpContext,
                 StatusCodes.Status403Forbidden,
-                MessageCodes.Forbidden)
+                MessageCodes.Forbidden,
+                ApiResultCodes.AccessDenied)
         };
     });
 
@@ -80,7 +90,8 @@ builder.Services.AddMemoryCache();
 static async Task WriteAuthenticationFailureAsync(
     HttpContext httpContext,
     int statusCode,
-    string code)
+    string code,
+    int resultCode)
 {
     if (httpContext.Response.HasStarted)
         return;
@@ -90,7 +101,11 @@ static async Task WriteAuthenticationFailureAsync(
     var localizer = httpContext.RequestServices
         .GetRequiredService<IBusinessMessageLocalizer>();
     var locale = resolver.Resolve(httpContext);
-    var message = localizer.Get(code, locale);
+    var description = localizer.Get(code, locale);
+    var titleCode = statusCode == StatusCodes.Status403Forbidden
+        ? MessageCodes.Forbidden
+        : MessageCodes.Unauthorized;
+    var title = localizer.Get(titleCode, locale, fallbackMessage: description);
 
     httpContext.Response.StatusCode = statusCode;
     httpContext.Response.ContentType = "application/json";
@@ -98,8 +113,9 @@ static async Task WriteAuthenticationFailureAsync(
 
     await httpContext.Response.WriteAsJsonAsync(
         ApiResponse<object>.Fail(
-            message,
-            code: code,
+            title,
+            description,
+            resultCode,
             traceId: httpContext.TraceIdentifier));
 }
 

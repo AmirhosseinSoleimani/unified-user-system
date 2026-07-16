@@ -101,7 +101,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
                 throw new DomainException("Request is null.");
 
             var response = await _roleService.AssignRoleToUserAsync(userId, req.RoleId, ct);
-            return OkResponse(response, "Role assigned successfully.");
+            return OkResponse(response);
         }
 
         [Authorize(Policy = OperationPolicyNames.UsersRolesRemove)]
@@ -118,7 +118,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
             CancellationToken ct)
         {
             var response = await _roleService.RemoveRoleFromUserAsync(userId, roleId, ct);
-            return OkResponse(response, "Role removed successfully.");
+            return OkResponse(response);
         }
 
         [Authorize(Policy = OperationPolicyNames.UsersRolesReplace)]
@@ -139,7 +139,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
                 throw new DomainException("Request is null.");
 
             var response = await _roleService.ReplaceUserRolesAsync(userId, req.RoleIds, ct);
-            return OkResponse(response, "User roles replaced successfully.");
+            return OkResponse(response);
         }
     }
 }

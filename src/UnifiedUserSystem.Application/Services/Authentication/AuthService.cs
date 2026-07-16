@@ -129,7 +129,7 @@ public class AuthService : IAuthService
             accessToken,
             refreshToken,
             refreshSession.ExpiresAtUtc,
-            fallbackRoles: new[] { role.Name }
+            fallbackRoles: [role.Name]
             );
     }
     public async Task<LoginResponse?> LoginAsync(LoginRequest req, CancellationToken ct = default)

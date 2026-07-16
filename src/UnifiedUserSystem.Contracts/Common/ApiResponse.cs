@@ -1,40 +1,59 @@
-﻿namespace UnifiedUserSystem.src.Contracts.Common
+﻿namespace UnifiedUserSystem.src.Contracts.Common;
+
+public class ApiResponse<T>
 {
-    public class ApiResponse<T>
-    {
-        public bool Success { get; init; }
-        public T? Data { get; init; }
-        public string? Message { get; init; }
-        public string? Code { get; init; }
-        public string? TraceId { get; init; }
-        public object? Errors { get; init; }
+    public bool Successful { get; init; }
+    public object? Data { get; init; }
+    public int ResultCode { get; init; }
+    public object? Error { get; init; } = new { };
 
-        public static ApiResponse<T> Ok(
-            T? data,
-            string? message = null,
-            string? code = null
-            )
-            => new ()
-            {
-                Success = true,
-                Data = data,
-                Message = message,
-                Code = code
-            };
+    public static ApiResponse<T> Ok(
+        T? data
+        )
+        => new ()
+        {
+            Successful = true,
+            ResultCode = 0,
+            Data = data,
+            Error = new { }
+        };
 
-        public static ApiResponse<T> Fail(
-            string message,
-            object? errors = null,
-            string? code = null,
-            string? traceId = null
-            )
-            => new()
+    public static ApiResponse<T> Fail(
+        string message,
+        object? error = null,
+        string? traceId = null)
+        => Fail(
+            title: message,
+            description: message,
+            resultCode: ApiResultCodes.BusinessError,
+            traceId: traceId);
+
+    public static ApiResponse<T> Fail(
+        string title,
+        string description,
+        int resultCode,
+        string? traceId = null
+        )
+        => new()
+        {
+            Successful = false,
+            ResultCode = resultCode,
+            Data = new { },
+            Error = new
             {
-                Success = false,
-                Message = message,
-                Code = code,
-                TraceId = traceId,
-                Errors = errors
-            };
-    }
+                traceId,
+                title,
+                description
+            }
+        };
+}
+
+
+public static class ApiResultCodes
+{
+    public const int Success = 0;
+    public const int BusinessError = 1;
+    public const int AccessDenied = 2;
+    public const int TokenExpired = 3;
+    public const int ServerError = 4;
 }

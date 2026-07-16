@@ -30,14 +30,18 @@ public static class ApiModelValidationOptions
                             locale))
                         .ToArray());
 
-            var message = localizer.Get(MessageCodes.BadRequest, locale);
+            var title = localizer.Get(MessageCodes.BadRequest, locale);
+            var description = errors
+                .SelectMany(error => error.Value)
+                .FirstOrDefault()
+                ?? title;
             httpContext.Response.Headers["Content-Language"] = locale;
 
             return new BadRequestObjectResult(
                 ApiResponse<object>.Fail(
-                    message,
-                    errors,
-                    MessageCodes.BadRequest,
+                    title,
+                    description,
+                    ApiResultCodes.BusinessError,
                     httpContext.TraceIdentifier));
         };
     }

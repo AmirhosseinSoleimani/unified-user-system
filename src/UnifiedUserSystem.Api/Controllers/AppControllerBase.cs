@@ -33,37 +33,40 @@ public class AppControllerBase : ControllerBase
     }
 
     protected ActionResult<ApiResponse<object>> OkMessage(string message) 
-        => Ok(ApiResponse<object>.Ok(null, message));
-
-    protected ActionResult<ApiResponse<object>> OkMessageCode(string code) 
-        => Ok(ApiResponse<object>.Ok(null, Localize(code), code));
+        => Ok(ApiResponse<object>.Ok(new { }));
 
     protected ActionResult<ApiResponse<T>> OkResponse<T>(
-        T data,
-        string? message = null,
-        string? code = null) 
-        => Ok(ApiResponse<T>.Ok(data, message, code));
+        T data
+        ) 
+        => Ok(ApiResponse<T>.Ok(data));
 
     protected ActionResult<ApiResponse<T>> CreatedResponse<T>(
         string actionName,
         object? routeValues,
-        T data,
-        string? message = null)
-        => CreatedAtAction(actionName, routeValues, ApiResponse<T>.Ok(data, message));
+        T data
+        )
+        => CreatedAtAction(actionName, routeValues, ApiResponse<T>.Ok(data));
 
     protected ActionResult<ApiResponse<object>> NoContentResponse()
-        => StatusCode(StatusCodes.Status204NoContent);
+        => Ok(ApiResponse<object>.Ok(new { }));
 
     protected ActionResult<ApiResponse<object>> BadRequestResponse(
         string? message = null,
-        object? errors = null,
         string code = MessageCodes.BadRequest)
-        => BadRequest(Failure(code, message, errors));
+        => BadRequest(Failure(
+            title: Localize(MessageCodes.BadRequest),
+            description: message ?? Localize(code),
+            resultCode: ApiResultCodes.BusinessError));
 
     protected ActionResult<ApiResponse<object>> UnauthorizedResponse(
         string? message = null,
         string code = MessageCodes.Unauthorized)
-        => StatusCode(StatusCodes.Status401Unauthorized, Failure(code, message));
+        => StatusCode(
+            StatusCodes.Status401Unauthorized,
+            Failure(
+                title: Localize(MessageCodes.Unauthorized),
+                description: message ?? Localize(code),
+                resultCode: ApiResultCodes.AccessDenied));
 
     protected ActionResult<ApiResponse<T>> UnauthorizedResponse<T>(
         string? message = null,
@@ -71,40 +74,68 @@ public class AppControllerBase : ControllerBase
         => StatusCode(
             StatusCodes.Status401Unauthorized,
             ApiResponse<T>.Fail(
-                message ?? Localize(code),
-                code: code,
-                traceId: HttpContext.TraceIdentifier));
+               title: Localize(MessageCodes.Unauthorized),
+               description: message ?? Localize(code),
+               resultCode: ApiResultCodes.AccessDenied,
+               traceId: HttpContext.TraceIdentifier));
 
     protected ActionResult<ApiResponse<object>> ForbiddenResponse(
         string? message = null,
         string code = MessageCodes.Forbidden)
-        => StatusCode(StatusCodes.Status403Forbidden, Failure(code, message));
+        => StatusCode(
+            StatusCodes.Status403Forbidden,
+            Failure(
+                title: Localize(MessageCodes.Forbidden),
+                description: message ?? Localize(code),
+                resultCode: ApiResultCodes.AccessDenied));
 
     protected ActionResult<ApiResponse<object>> NotFoundResponse(
         string? message = null,
         string code = MessageCodes.NotFound)
-        => NotFound(Failure(code, message));
+        => NotFound(Failure(
+            title: Localize(MessageCodes.NotFound),
+            description: message ?? Localize(code),
+            resultCode: ApiResultCodes.BusinessError));
 
     protected ActionResult<ApiResponse<object>> ConflictResponse(
         string? message = null,
-        object? errors = null,
         string code = MessageCodes.Conflict)
-        => Conflict(Failure(code, message, errors));
+        => Conflict(Failure(
+            title: Localize(MessageCodes.Conflict),
+            description: message ?? Localize(code),
+            resultCode: ApiResultCodes.BusinessError));
 
     protected ActionResult<ApiResponse<object>> FailureResponse(
         string? message = null,
         int statusCode = StatusCodes.Status400BadRequest,
         object? errors = null,
         string code = MessageCodes.BadRequest)
-        => StatusCode(statusCode, Failure(code, message, errors));
+        => StatusCode(
+            statusCode,
+            Failure(
+                title: Localize(code),
+                description: message ?? Localize(code),
+                resultCode: ResolveResultCode(statusCode)
+            ));
 
-    private ApiResponse<object> Failure(string code, string? message, object? errors = null)
+    private ApiResponse<object> Failure(
+        string title,
+        string description,
+        int resultCode)
         => ApiResponse<object>.Fail(
-            message ?? Localize(code),
-            errors,
-            code,
+            title,
+            description,
+            resultCode,
             HttpContext.TraceIdentifier);
 
+    private static int ResolveResultCode(int statusCode)
+        => statusCode switch
+        {
+            StatusCodes.Status401Unauthorized => ApiResultCodes.AccessDenied,
+            StatusCodes.Status403Forbidden => ApiResultCodes.AccessDenied,
+            StatusCodes.Status500InternalServerError => ApiResultCodes.ServerError,
+            _ => ApiResultCodes.BusinessError
+        };
 
     private static string ResolveFallbackLocale(string? acceptLanguage)
     => !string.IsNullOrWhiteSpace(acceptLanguage) &&

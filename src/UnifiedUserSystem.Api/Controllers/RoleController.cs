@@ -70,7 +70,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
             var role = await _roles.CreateRoleAsync(req.Name, ct);
 
-            return OkResponse(ToResponse(role), "Role created successfully.");
+            return OkResponse(ToResponse(role));
         }
 
         [Authorize(Policy = OperationPolicyNames.RolesUpdate)]
@@ -92,7 +92,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
             var role = await _roles.UpdateRoleAsync(roleId, req.Name, ct);
 
-            return OkResponse(ToResponse(role), "Role updated successfully.");
+            return OkResponse(ToResponse(role));
         }
 
         [Authorize(Policy = OperationPolicyNames.RolesRename)]
@@ -196,7 +196,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
             var response = await _roles.AssignOperationToRoleAsync(roleId, req.OperationId, ct);
 
-            return OkResponse(response, "Operation assigned successfully.");
+            return OkResponse(response);
         }
 
         [Authorize(Policy = OperationPolicyNames.RolesOperationsRemove)]
@@ -214,7 +214,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
         {
             var response = await _roles.RemoveOperationFromRoleAsync(roleId, operationId, ct);
 
-            return OkResponse(response, "Operation removed successfully.");
+            return OkResponse(response);
         }
 
         [Authorize(Policy = OperationPolicyNames.RolesOperationsReplace)]
@@ -236,7 +236,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
             var response = await _roles.ReplaceRoleOperationsAsync(roleId, req.OperationIds, ct);
 
-            return OkResponse(response, "Role operations replaced successfully.");
+            return OkResponse(response);
         }
 
         private static RoleResponse ToResponse(Role role)

@@ -74,7 +74,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
             var op = await _ops.CreateOperationAsync(req.Key, req.Title, ct);
 
-            return OkResponse(ToResponse(op), "Operation created successfully.");
+            return OkResponse(ToResponse(op));
         }
 
         [Authorize(Policy = OperationPolicyNames.OperationsUpdate)]
@@ -96,7 +96,7 @@ namespace UnifiedUserSystem.src.Api.Controllers
 
             var op = await _ops.UpdateOperationAsync(operationId, req.Key, req.Title, ct);
 
-            return OkResponse(ToResponse(op), "Operation updated successfully.");
+            return OkResponse(ToResponse(op));
         }
 
         [Authorize(Policy = OperationPolicyNames.OperationsRenameTitle)]

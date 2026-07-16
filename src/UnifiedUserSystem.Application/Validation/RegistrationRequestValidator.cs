@@ -19,8 +19,8 @@ public sealed class RegistrationRequestValidator : IRegistrationRequestValidator
 
         var email = Guard.NotEmpty(request.Email, nameof(request.Email));
         var username = Guard.NotEmpty(request.Username, nameof(request.Username));
-        var firstName = request.FirstName;
-        var lastName = request.LastName;
+        var firstName = Guard.NotEmpty(request.FirstName, nameof(request.FirstName));
+        var lastName = Guard.NotEmpty(request.LastName, nameof(request.LastName));
         var phoneNumber = Guard.NotEmpty(request.PhoneNumber, nameof(request.PhoneNumber));
         var password = Guard.NotEmpty(request.Password, nameof(request.Password));
 
