@@ -14,6 +14,7 @@ public class User : AuditableEntity<Guid>
     public const int FullnameMaxLength = 255;
     public const int PhoneNumberMaxLength = 20;
     public const int PasswordHashMaxLength = 72;
+    public const int PreferredLocaleMaxLength = 10;
 
     private static readonly HashSet<string> ReserveUsernames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -23,15 +24,18 @@ public class User : AuditableEntity<Guid>
 
     private static readonly Regex UsernameRegex = new(@"^[A-Za-z][A-Za-z0-9_.]{2,19}$", RegexOptions.Compiled);
     private static readonly Regex PhoneNumberRegex = new(@"^(\+989\d{9}|09\d{9})$", RegexOptions.Compiled);
+    private static readonly Regex LocaleRegex = new(@"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$", RegexOptions.Compiled);
 
     public string Email { get; private set; } = default!;
     public string Username { get; private set; } = default!;
     public string FirstName { get; private set; } = default!;
     public string LastName { get; private set; } = default!;
-    public string PhoneNumber { get; private set; } = default!;
     public string Fullname => $"{FirstName} {LastName}".Trim();
+    public string PhoneNumber { get; private set; } = default!;
     public string PasswordHash { get; private set; } = default!;
+    public string? PreferredLocale { get; private set; }
     public bool IsActive { get; private set; } = true;
+    
 
     public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public ICollection<RefreshTokenSession> RefreshTokenSessions { get; private set; } = new List<RefreshTokenSession>();
@@ -47,7 +51,9 @@ public class User : AuditableEntity<Guid>
         string phoneNumber,
         string passwordHash,
         DateTimeOffset nowUtc,
-        Guid? actorUserId)
+        Guid? actorUserId,
+        string? preferredLocale = null
+        )
     {
         var newEmail = EnsureValidEmail(email);
         var newUsername = EnsureValidUsername(username);
@@ -55,6 +61,8 @@ public class User : AuditableEntity<Guid>
         var newLastName = EnsureValidLastName(lastName);
         var newPhoneNumber = EnsureValidPhoneNumber(phoneNumber);
         var newPasswordHash = EnsureValidPasswordHash(passwordHash);
+        var newPreferredLocale = EnsureValidPreferredLocale(preferredLocale);
+
     
         var user =  new User
         {
@@ -65,6 +73,7 @@ public class User : AuditableEntity<Guid>
             LastName = newLastName,
             PhoneNumber = newPhoneNumber,
             PasswordHash = newPasswordHash,
+            PreferredLocale = newPreferredLocale,
             IsActive = true,
         };
         user.SetCreated(nowUtc, actorUserId ?? user.Id);
@@ -96,6 +105,19 @@ public class User : AuditableEntity<Guid>
     }
 
 
+    public void ChangePreferredLocale(
+    string? preferredLocale,
+    DateTimeOffset nowUtc,
+    Guid? actorUserId)
+    {
+        preferredLocale = EnsureValidPreferredLocale(preferredLocale);
+        if (string.Equals(PreferredLocale, preferredLocale, StringComparison.Ordinal))
+            return;
+
+        PreferredLocale = preferredLocale;
+        Touch(nowUtc, actorUserId ?? Id);
+    }
+
     [Obsolete("Use ChangeProfile instead.")]
     public void ChangeFullName(string newFullName, DateTimeOffset nowUtc, Guid? actorUserId)
     {
@@ -106,9 +128,7 @@ public class User : AuditableEntity<Guid>
     public void ChangePasswordHash(string newPasswordHash, DateTimeOffset nowUtc, Guid? actorUserId)
     {
         newPasswordHash = EnsureValidPasswordHash(newPasswordHash);
-
         if (PasswordHash == newPasswordHash) return;
-
         PasswordHash = newPasswordHash;
         Touch(nowUtc, actorUserId ?? Id);
     }
@@ -116,9 +136,7 @@ public class User : AuditableEntity<Guid>
     public void ChangeUsername(string newUsername, DateTimeOffset nowUtc, Guid? actorUserId)
     {
         newUsername = EnsureValidUsername(newUsername);
-
         if (Username == newUsername) return;
-
         Username = newUsername;
         Touch(nowUtc, actorUserId ?? Id);
     }
@@ -138,27 +156,19 @@ public class User : AuditableEntity<Guid>
     }
 
     [Obsolete("Use Deactivate instead.")]
-    public void Deactive(
-        DateTimeOffset nowUtc,
-        Guid? actorUserId)
-    {
-        Deactivate(nowUtc, actorUserId);
-    }
+    public void Deactive(DateTimeOffset nowUtc, Guid? actorUserId) => Deactivate(nowUtc, actorUserId);
 
     [Obsolete("Use Activate instead.")]
-    public void Active(
-        DateTimeOffset nowUtc,
-        Guid? actorUserId)
-    {
-        Activate(nowUtc, actorUserId);
-    }
+    public void Active(DateTimeOffset nowUtc, Guid? actorUserId) => Activate(nowUtc, actorUserId);
 
     public void AssignRole(int roleId, DateTimeOffset nowUtc, Guid? actorUserId)
     {
-        Guard.True(roleId > 0, "RoleId is invalid.");
+        Guard.True(
+            roleId > 0,
+            DomainErrorCodes.RoleIdInvalid,
+            new Dictionary<string, object?> { ["roleId"] = roleId });
 
         if (UserRoles.Any(x => x.RoleId == roleId)) return;
-
         UserRoles.Add(UserRole.Create(Id, roleId, nowUtc, actorUserId ?? Id));
 
         Touch(nowUtc, actorUserId ?? Id);
@@ -166,10 +176,16 @@ public class User : AuditableEntity<Guid>
 
     public void RemoveRole(int roleId, DateTimeOffset nowUtc, Guid? actorUserId)
     {
-        if (roleId <= 0) throw new DomainException("RoleId is invalid.");
-        var ur = UserRoles.FirstOrDefault(x => x.RoleId == roleId);
-        if (ur is null) return;
-        UserRoles.Remove(ur);
+        if (roleId <= 0)
+        {
+            throw DomainException.For(
+                DomainErrorCodes.RoleIdInvalid,
+                new Dictionary<string, object?> { ["roleId"] = roleId });
+        }
+
+        var userRole = UserRoles.FirstOrDefault(x => x.RoleId == roleId);
+        if (userRole is null) return;
+        UserRoles.Remove(userRole);
         Touch(nowUtc, actorUserId ?? Id);
     }
 
@@ -275,5 +291,23 @@ public class User : AuditableEntity<Guid>
         Guard.NotEmpty(passwordHash, nameof(passwordHash));
         Guard.MaxLen(passwordHash, PasswordHashMaxLength, nameof(passwordHash));
         return passwordHash;
+    }
+    private static string? EnsureValidPreferredLocale(string? preferredLocale)
+    {
+        if (string.IsNullOrWhiteSpace(preferredLocale)) return null;
+        preferredLocale = preferredLocale.Trim().Replace('_', '-');
+        Guard.MaxLen(preferredLocale, PreferredLocaleMaxLength, nameof(PreferredLocale));
+
+        if (!LocaleRegex.IsMatch(preferredLocale))
+        {
+            throw DomainException.For(
+                DomainErrorCodes.LocaleFormatInvalid,
+                new Dictionary<string, object?> { ["locale"] = preferredLocale });
+        }
+
+        var parts = preferredLocale.Split('-', 2);
+        return parts.Length == 1
+            ? parts[0].ToLowerInvariant()
+            : $"{parts[0].ToLowerInvariant()}-{parts[1].ToUpperInvariant()}";
     }
 }

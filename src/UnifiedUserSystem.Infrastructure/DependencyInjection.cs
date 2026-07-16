@@ -1,13 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using UnifiedUserSystem.src.Application.Abstractions.Auditing;
 using UnifiedUserSystem.src.Application.Abstractions.Persistence;
 using UnifiedUserSystem.src.Application.Abstractions.Security;
 using UnifiedUserSystem.src.Application.Abstractions.Time;
 using UnifiedUserSystem.src.Application.Abstractions.Web;
-using UnifiedUserSystem.src.Domain.Security.Entities;
 using UnifiedUserSystem.src.Infrastructure.Persistence;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Repositories.Auditing;
@@ -41,7 +42,10 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("Default")));
+            options.UseNpgsql(configuration.GetConnectionString("Default") 
+            ?? throw new InvalidOperationException(
+                "ConnectionStrings:Default is missing.")));
+
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -62,13 +66,62 @@ public static class DependencyInjection
 
     private static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<RedisOptions>(configuration.GetSection("Redis"));
+        services.AddOptions<RedisOptions>()
+            .Bind(configuration.GetSection("Redis"))
+            .Validate(options => !string.IsNullOrWhiteSpace(options.ConnectionString), "Redis:ConnectionString is required.")
+            .ValidateOnStart();
 
-        services.AddSingleton<IConnectionMultiplexer>(sp =>
-                {
-                    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RedisOptions>>().Value;
-                    return ConnectionMultiplexer.Connect(options.ConnectionString);
-                });
+        services.AddSingleton<IConnectionMultiplexer>(serviceProvider =>
+        {
+            var redisOptions = serviceProvider
+                .GetRequiredService<IOptions<RedisOptions>>()
+                .Value;
+
+            var logger = serviceProvider
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("Redis");
+
+            var configurationOptions = ConfigurationOptions.Parse(
+                redisOptions.ConnectionString);
+
+            configurationOptions.AbortOnConnectFail = false;
+            configurationOptions.ConnectRetry = 5;
+            configurationOptions.ConnectTimeout = 5000;
+            configurationOptions.SyncTimeout = 5000;
+            configurationOptions.AsyncTimeout = 5000;
+            configurationOptions.ClientName = "UnifiedUserSystem.Api";
+
+            logger.LogInformation(
+                "Connecting to Redis using {RedisConfiguration}",
+                configurationOptions.ToString(includePassword: false));
+
+            var connection = ConnectionMultiplexer.Connect(configurationOptions);
+
+            connection.ConnectionFailed += (_, args) =>
+            {
+                logger.LogError(
+                    args.Exception,
+                    "Redis connection failed. Endpoint: {Endpoint}, FailureType: {FailureType}",
+                    args.EndPoint,
+                    args.FailureType);
+            };
+
+            connection.ConnectionRestored += (_, args) =>
+            {
+                logger.LogInformation(
+                    "Redis connection restored. Endpoint: {Endpoint}",
+                    args.EndPoint);
+            };
+
+            connection.ErrorMessage += (_, args) =>
+            {
+                logger.LogError(
+                    "Redis server error: {RedisError}",
+                    args.Message);
+            };
+
+            return connection;
+        });
 
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();

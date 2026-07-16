@@ -11,5 +11,6 @@
         public string Fullname { get; set; } = default!;
         public bool IsActive { get; set; }
         public string[] Roles { get; set; } = Array.Empty<string>();
+        public string? PreferredLocale { get; set; }
     }
 }

@@ -16,6 +16,10 @@
 	<ItemGroup>
 		<ProjectReference Include="..\UnifiedUserSystem.Application\UnifiedUserSystem.Application.csproj" />
 		<ProjectReference Include="..\UnifiedUserSystem.Infrastructure\UnifiedUserSystem.Infrastructure.csproj" />
+		<Content Update="appsettings.Development.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
 	</ItemGroup>
 
 </Project>

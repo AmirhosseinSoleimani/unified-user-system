@@ -1,23 +1,15 @@
 ﻿namespace UnifiedUserSystem.src.Domain.Common;
 
-public class DomainException : Exception, ICodedBusinessException
+public sealed class BusinessConflictException : InvalidOperationException, ICodedBusinessException
 {
-    public DomainException(string legacyMessage) 
-        : base(legacyMessage)
-    {
-        Code = DomainErrorCodes.DomainError;
-        Parameters = EmptyParameters;
-        LegacyFallbackMessage = legacyMessage;
-    }
-
-    private DomainException(
+    private BusinessConflictException(
         string code,
         IReadOnlyDictionary<string, object?>? parameters,
         Exception? innerException)
         : base(BusinessExceptionDiagnostics.Build(code, parameters), innerException)
     {
         if (string.IsNullOrWhiteSpace(code))
-            throw new ArgumentException("A domain error code is required.", nameof(code));
+            throw new ArgumentException("A business error code is required.", nameof(code));
 
         Code = code.Trim();
         Parameters = parameters ?? EmptyParameters;
@@ -27,9 +19,9 @@ public class DomainException : Exception, ICodedBusinessException
 
     public IReadOnlyDictionary<string, object?> Parameters { get; }
 
-    public string? LegacyFallbackMessage { get; }
+    public string? LegacyFallbackMessage => null;
 
-    public static DomainException For(
+    public static BusinessConflictException For(
         string code,
         IReadOnlyDictionary<string, object?>? parameters = null,
         Exception? innerException = null)

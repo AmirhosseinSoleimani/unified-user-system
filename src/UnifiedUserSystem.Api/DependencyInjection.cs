@@ -2,8 +2,10 @@
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using UnifiedUserSystem.src.Api.Authorization;
+using UnifiedUserSystem.src.Api.Localization;
 using UnifiedUserSystem.src.Api.Middlewares;
 using UnifiedUserSystem.src.Api.Options;
+using UnifiedUserSystem.src.Application.Options;
 
 namespace UnifiedUserSystem.Api;
 
@@ -17,9 +19,11 @@ public static class DependencyInjection
             .AddApiControllers()
             .AddApiAuthorization()
             .AddApiSwagger()
+            .AddApiLocalization(configuration)
             .AddApiMiddlewares();
 
         return services;
+
     }
 
     private static IServiceCollection AddApiControllers(this IServiceCollection services)
@@ -79,6 +83,53 @@ public static class DependencyInjection
         return services;
     }
 
+    private static IServiceCollection AddApiLocalization(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services
+            .AddOptions<LocalizationOptions>()
+            .Bind(
+                configuration.GetSection(
+                    LocalizationOptions.SectionName))
+            .Validate(
+                options => options.IsValid(),
+                "Localization configuration is invalid.")
+            .ValidateOnStart();
+
+        services.AddScoped<
+            IRequestLocaleResolver,
+            RequestLocaleResolver>();
+
+        services.AddSingleton<
+            IBusinessMessageLocalizer,
+            DictionaryBusinessMessageLocalizer>();
+
+        services.AddHttpClient<
+            IGeoIpCountryResolver,
+            HttpGeoIpCountryResolver>(
+            (serviceProvider, httpClient) =>
+            {
+                var localizationOptions = serviceProvider
+                    .GetRequiredService<
+                        IOptions<LocalizationOptions>>()
+                    .Value;
+
+                var timeoutSeconds = Math.Clamp(
+                    localizationOptions.GeoIp.TimeoutSeconds,
+                    1,
+                    10);
+
+                httpClient.Timeout =
+                    TimeSpan.FromSeconds(timeoutSeconds);
+
+                httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+                    "UnifiedUserSystem-GeoIp/1.0");
+            });
+
+        return services;
+    }
+
     private static IServiceCollection AddApiMiddlewares(this IServiceCollection services)
     {
         services.AddScoped<ExceptionHandlingMiddleware>();
@@ -88,4 +139,5 @@ public static class DependencyInjection
 
         return services;
     }
+
 }
