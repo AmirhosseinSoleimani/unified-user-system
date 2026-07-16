@@ -21,12 +21,6 @@ public sealed class RegistrationRequestValidator : IRegistrationRequestValidator
         var username = Guard.NotEmpty(request.Username, nameof(request.Username));
         var firstName = request.FirstName;
         var lastName = request.LastName;
-
-        if ((string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName)) &&
-            !string.IsNullOrWhiteSpace(request.FullName))
-        {
-            (firstName, lastName) = User.SplitFullName(request.FullName);
-        }
         var phoneNumber = Guard.NotEmpty(request.PhoneNumber, nameof(request.PhoneNumber));
         var password = Guard.NotEmpty(request.Password, nameof(request.Password));
 

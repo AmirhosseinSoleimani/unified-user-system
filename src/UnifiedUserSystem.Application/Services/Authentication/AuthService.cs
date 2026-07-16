@@ -78,17 +78,8 @@ public class AuthService : IAuthService
 
         var email = User.NormalizeEmail(req.Email);
         var username = User.NormalizeUsername(req.Username);
-        var firstName = req.FirstName;
-        var lastName = req.LastName;
-
-        if ((string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName)) &&
-            !string.IsNullOrWhiteSpace(req.FullName))
-        {
-            (firstName, lastName) = User.SplitFullName(req.FullName);
-        }
-
-        firstName = User.NormalizeFirstName(firstName);
-        lastName = User.NormalizeLastName(lastName);
+        var firstName = User.NormalizeFirstName(req.FirstName);
+        var lastName = User.NormalizeLastName(req.LastName);
         var phoneNumber = User.NormalizePhoneNumber(req.PhoneNumber);
 
         if (await _uow.Users.EmailExistsAsync(email))
@@ -104,7 +95,16 @@ public class AuthService : IAuthService
         var now = _clock.Utcnow;
         var passwordHash = _hasher.Hash(req.Password);
 
-        var user = User.CreateNew(email, username, firstName, lastName, phoneNumber, passwordHash, now, actorUserId: null);
+        var user = User.CreateNew(
+            email,
+            username,
+            firstName,
+            lastName,
+            phoneNumber,
+            passwordHash,
+            now,
+            actorUserId: null);
+
         user.AssignRole(roleId: role.Id, now, actorUserId: user.Id);
 
         _uow.Users.Add(user);

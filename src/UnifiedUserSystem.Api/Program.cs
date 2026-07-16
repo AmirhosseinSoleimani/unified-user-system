@@ -15,45 +15,6 @@ using MfaOptions = UnifiedUserSystem.src.Application.Options.MfaOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine("========================================");
-Console.WriteLine($"Environment : {builder.Environment.EnvironmentName}");
-Console.WriteLine($"ContentRoot : {builder.Environment.ContentRootPath}");
-Console.WriteLine($"Application : {typeof(Program).Assembly.Location}");
-Console.WriteLine("========================================");
-
-var configurationRoot = (IConfigurationRoot)builder.Configuration;
-
-foreach (var provider in configurationRoot.Providers)
-{
-    if (!provider.TryGet(
-            "ConnectionStrings:Default",
-            out var connectionString) ||
-        string.IsNullOrWhiteSpace(connectionString))
-    {
-        continue;
-    }
-
-    try
-    {
-        var cs = new NpgsqlConnectionStringBuilder(connectionString);
-
-        Console.WriteLine("----------------------------------------");
-        Console.WriteLine($"Provider : {provider}");
-        Console.WriteLine($"Host     : {cs.Host}");
-        Console.WriteLine($"Port     : {cs.Port}");
-        Console.WriteLine($"Database : {cs.Database}");
-        Console.WriteLine($"Username : {cs.Username}");
-    }
-    catch
-    {
-        Console.WriteLine("----------------------------------------");
-        Console.WriteLine($"Provider : {provider}");
-        Console.WriteLine("Connection string could not be parsed.");
-    }
-}
-
-Console.WriteLine("========================================");
-
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -150,15 +111,15 @@ app.UseForwardedHeaders();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseMiddleware<ExceptionHandlingMiddleware>();
-}
-
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseDeveloperExceptionPage();
+//}
+//else
+//{
+//    app.UseMiddleware<ExceptionHandlingMiddleware>();
+//}
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<SecurityRateLimitingMiddleware>();
 app.UseMiddleware<IpAccessControlMiddleware>();
 

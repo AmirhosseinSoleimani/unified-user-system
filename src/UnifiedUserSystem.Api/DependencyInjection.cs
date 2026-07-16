@@ -26,9 +26,12 @@ public static class DependencyInjection
 
     }
 
+
     private static IServiceCollection AddApiControllers(this IServiceCollection services)
     {
-        services.AddControllers();
+        services
+            .AddControllers()
+            .ConfigureApiBehaviorOptions(ApiModelValidationOptions.Configure);
 
         return services;
     }
