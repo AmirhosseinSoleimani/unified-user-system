@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 using UnifiedUserSystem.src.Domain.Common;
 
 namespace UnifiedUserSystem.src.Application.Validation;
@@ -17,21 +18,29 @@ public sealed class PasswordPolicy : IPasswordPolicy
         password = (password ?? string.Empty).Trim();
 
         if (password.Length < MinLength)
-            throw new DomainException($"Password must be at last {MinLength} characters");
+            throw DomainException.For(
+                DomainErrorCodes.PasswordMinLength,
+                Parameters(("min", MinLength)));
 
         if (password.Length > MaxLength)
-            throw new DomainException($"Password must be at most {MaxLength} characters");
+            throw DomainException.For(
+                DomainErrorCodes.PasswordMaxLength,
+                Parameters(("max", MaxLength)));
 
         if (RequireUpper && !password.Any(char.IsUpper))
-            throw new DomainException("Password must contain at least one uppercase letter");
+            throw DomainException.For(DomainErrorCodes.PasswordUppercaseRequired);
 
         if (RequireLower && !password.Any(char.IsLower))
-            throw new DomainException("Password must contain at least one lowercase letter");
+            throw DomainException.For(DomainErrorCodes.PasswordLowercaseRequired);
 
         if (RequireDigit && !password.Any(char.IsDigit))
-            throw new DomainException("Password must contain at least one digit");
+            throw DomainException.For(DomainErrorCodes.PasswordDigitRequired);
 
         if (RequireSpecial && !Regex.IsMatch(password, @"[!@#$%^&*()_\-+=\[\]{};:,.?/\\|~]"))
-            throw new DomainException("Password must contain at least one special character");
+            throw DomainException.For(DomainErrorCodes.PasswordSpecialRequired);
     }
+
+    private static IReadOnlyDictionary<string, object?> Parameters(
+        params (string Key, object? Value)[] values)
+        => values.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
 }

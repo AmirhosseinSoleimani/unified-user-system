@@ -15,7 +15,7 @@ public sealed class RegistrationRequestValidator : IRegistrationRequestValidator
     public void Validate(RegisterRequest request)
     {
         if (request is null)
-            throw new DomainException("Request is null.");
+            throw DomainException.For(DomainErrorCodes.RequestRequired);
 
         var email = Guard.NotEmpty(request.Email, nameof(request.Email));
         var username = Guard.NotEmpty(request.Username, nameof(request.Username));

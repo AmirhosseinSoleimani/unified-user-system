@@ -23,7 +23,7 @@ public sealed class DictionaryBusinessMessageLocalizer : IBusinessMessageLocaliz
               ?? fallbackMessage
               ?? code;
 
-        return ReplaceParameters(template, parameters);
+        return ReplaceParameters(template, parameters, locale);
     }
 
     private static string? FindTemplate(string code, string locale)
@@ -33,7 +33,8 @@ public sealed class DictionaryBusinessMessageLocalizer : IBusinessMessageLocaliz
 
     private static string ReplaceParameters(
         string template,
-        IReadOnlyDictionary<string, object?>? parameters)
+        IReadOnlyDictionary<string, object?>? parameters,
+        string locale)
     {
         if (parameters is null || parameters.Count == 0)
             return template;
@@ -42,11 +43,37 @@ public sealed class DictionaryBusinessMessageLocalizer : IBusinessMessageLocaliz
         {
             template = template.Replace(
                 "{" + key + "}",
-                Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
+                ConvertParameterValue(key, value, locale),
                 StringComparison.OrdinalIgnoreCase);
         }
 
         return template;
+    }
+
+    private static string ConvertParameterValue(
+        string key,
+        object? value,
+        string locale)
+    {
+        if (string.Equals(key, "field", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(locale, LocalizationOptions.PersianLocale, StringComparison.OrdinalIgnoreCase) &&
+            value is string field)
+        {
+            return field switch
+            {
+                "Email" => "ایمیل",
+                "Username" => "نام کاربری",
+                "FirstName" => "نام",
+                "LastName" => "نام خانوادگی",
+                "PhoneNumber" => "شماره تلفن",
+                "Password" => "گذرواژه",
+                "EmailOrUsername" => "ایمیل یا نام کاربری",
+                "ChallengeId" => "شناسه چالش",
+                _ => field
+            };
+        }
+
+        return Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
     }
 
     private static IReadOnlyDictionary<string, string> EnglishMessages { get; }
@@ -91,11 +118,11 @@ public sealed class DictionaryBusinessMessageLocalizer : IBusinessMessageLocaliz
             [MessageCodes.UnexpectedError] = "An unexpected error occurred.",
             [MessageCodes.RateLimitExceeded] = "Too many requests were sent. Please try again later.",
             [MessageCodes.IpAddressBlocked] = "Requests from this IP address are not allowed.",
-            [MessageCodes.DomainErrorTitle] = "Business rule violation",
+            [MessageCodes.DomainErrorTitle] = "Error while performing the operation",
             [MessageCodes.LogoutSucceeded] = "You have been logged out successfully.",
             [MessageCodes.SessionsRevoked] = "All active sessions were revoked successfully.",
             [MessageCodes.PreferredLocaleUpdated] = "Your language preference was updated successfully."
-        };
+};
 
     private static IReadOnlyDictionary<string, string> PersianMessages { get; }
         = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -139,7 +166,7 @@ public sealed class DictionaryBusinessMessageLocalizer : IBusinessMessageLocaliz
             [MessageCodes.UnexpectedError] = "خطای پیش‌بینی‌نشده‌ای رخ داده است.",
             [MessageCodes.RateLimitExceeded] = "تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.",
             [MessageCodes.IpAddressBlocked] = "دسترسی از این نشانی IP مجاز نیست.",
-            [MessageCodes.DomainErrorTitle] = "نقض قانون کسب‌وکار",
+            [MessageCodes.DomainErrorTitle] = "خطا در انجام عملیات",
             [MessageCodes.LogoutSucceeded] = "خروج از حساب با موفقیت انجام شد.",
             [MessageCodes.SessionsRevoked] = "تمام نشست‌های فعال با موفقیت لغو شدند.",
             [MessageCodes.PreferredLocaleUpdated] = "زبان موردنظر شما با موفقیت ذخیره شد."

@@ -8,7 +8,7 @@ public sealed class LoginRequestValidator : ILoginRequestValidator
     public void Validate(LoginRequest request)
     {
         if (request is null)
-            throw new DomainException("Request is null.");
+            throw DomainException.For(DomainErrorCodes.RequestRequired);
 
         Guard.NotEmpty(request.EmailOrUsername, nameof(request.EmailOrUsername));
         Guard.NotEmpty(request.Password, nameof(request.Password));

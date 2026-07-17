@@ -19,11 +19,11 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
                 OptionsFactory.Create(new LocalizationOptions
             {
                 DefaultLocale = LocalizationOptions.EnglishLocale,
-                SupportedLocales = new[]
-                {
+                SupportedLocales = 
+                [
                     LocalizationOptions.PersianLocale,
                     LocalizationOptions.EnglishLocale
-                }
+                ]
             })),
             new DictionaryBusinessMessageLocalizer(),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<ExceptionHandlingMiddleware>.Instance)
