@@ -25,6 +25,10 @@ namespace UnifiedUserSystem.src.Infrastructure.Persistence.Repositories
         {
             return await _db.Users.AnyAsync(x => x.Username == username);
         }
+        public async Task<bool> PhoneNumberExistsAsync(string phoneNumber)
+        {
+            return await _db.Users.AnyAsync(x => x.PhoneNumber == phoneNumber);
+        }
         public async Task<User?> FindEmailOrUsernameAsync(string keyLower)
         {
             keyLower = (keyLower ?? string.Empty).Trim().ToLowerInvariant();

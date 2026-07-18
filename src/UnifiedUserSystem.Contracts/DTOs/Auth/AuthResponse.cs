@@ -1,4 +1,6 @@
-﻿namespace UnifiedUserSystem.src.Contracts.DTOs.Auth;
+﻿using System.Text.Json.Serialization;
+
+namespace UnifiedUserSystem.src.Contracts.DTOs.Auth;
 
 public record AuthResponse
 (
@@ -11,8 +13,8 @@ public record AuthResponse
     string Fullname,
     string[] Roles,
     string AccessToken,
-    string RefreshToken,
-    DateTimeOffset RefreshTokenExpiresAtUtc
+    [property: JsonIgnore] string RefreshToken,
+    [property: JsonIgnore] DateTimeOffset RefreshTokenExpiresAtUt
 )
 {
     public string? PreferredLocale { get; init; }

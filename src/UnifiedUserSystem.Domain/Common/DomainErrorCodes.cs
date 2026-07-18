@@ -28,6 +28,7 @@ public static class DomainErrorCodes
     public const string UserNotFound = "identity.user_not_found";
     public const string EmailAlreadyExists = "identity.email_already_exists";
     public const string UsernameAlreadyExists = "identity.username_already_exists";
+    public const string PhoneNumberAlreadyExists = "identity.phone_number_already_exists";
     public const string DefaultRoleNotFound = "identity.default_role_not_found";
 
     public const string MfaNoChannelEnabled = "security.mfa_no_channel_enabled";
