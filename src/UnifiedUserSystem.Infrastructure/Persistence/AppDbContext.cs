@@ -39,20 +39,10 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
-                {
-                    var parameter = Expression.Parameter(entityType.ClrType, "e");
-                    var prop = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
-                    var body = Expression.Equal(prop, Expression.Constant(false));
-                    var lambda = Expression.Lambda(body, parameter);
-
-                    modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
-                }
-            }
+            ApplySoftDeleteQueryFilters(modelBuilder);
 
             modelBuilder.Entity<AuditLog>(entity =>
             {
@@ -63,6 +53,21 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence
                 entity.Property(x => x.OldValues);
                 entity.Property(x => x.NewValues);
             });
+        }
+        private static void ApplySoftDeleteQueryFilters(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (!typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+                    continue;
+
+                var parameter = Expression.Parameter(entityType.ClrType, "e");
+                var prop = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
+                var body = Expression.Equal(prop, Expression.Constant(false));
+                var lambda = Expression.Lambda(body, parameter);
+
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+            }
         }
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

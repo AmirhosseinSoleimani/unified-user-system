@@ -83,14 +83,14 @@ public class AuthService : IAuthService
         var phoneNumber = User.NormalizePhoneNumber(req.PhoneNumber);
 
         if (await _uow.Users.EmailExistsAsync(email))
-            throw new InvalidOperationException("Email already exists.");
+            throw BusinessConflictException.For(DomainErrorCodes.EmailAlreadyExists);
 
         if (await _uow.Users.UsernameExistsAsync(username))
-            throw new InvalidOperationException("Username already exists.");
+            throw BusinessConflictException.For(DomainErrorCodes.UsernameAlreadyExists);
 
         var defaultRoleId = (int)AppRole.User;
         var role = await _uow.Roles.FindByIdAsync(defaultRoleId, ct)
-            ?? throw new InvalidOperationException("Default role not found. Seed roles first.");
+            ?? throw DomainException.For(DomainErrorCodes.DefaultRoleNotFound);
 
         var now = _clock.Utcnow;
         var passwordHash = _hasher.Hash(req.Password);

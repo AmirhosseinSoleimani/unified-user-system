@@ -11,7 +11,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
         {
             base.Configure(builder);
 
-            builder.ToTable("role_operations", "public");
+            builder.ToTable("role_operations", "identity");
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.Id)

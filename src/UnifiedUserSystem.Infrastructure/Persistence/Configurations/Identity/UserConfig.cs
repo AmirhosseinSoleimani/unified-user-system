@@ -11,13 +11,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
         {
             base.Configure(builder);
 
-            builder.ToTable("users", "public", tableBuilder =>
-            {
-                tableBuilder.HasCheckConstraint(
-                "ck_users_preferred_locale",
-                "preferred_locale IS NULL OR preferred_locale IN ('fa-IR', 'en-US')");
-            });
-
+            builder.ToTable("users", "identity");
             builder.HasKey(e => e.Id);
 
             builder.Property(x => x.Id)
@@ -55,14 +49,18 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
                 .HasMaxLength(User.PasswordHashMaxLength)
                 .IsRequired();
 
+            builder.Property(x => x.IsActive)
+                .HasColumnName("is_active")
+                .IsRequired();
+
             builder.Property(x => x.PreferredLocale)
-            .HasColumnName("preferred_locale")
-            .HasMaxLength(User.PreferredLocaleMaxLength)
-            .IsRequired(false);
+                .HasColumnName("preferred_locale")
+                .HasMaxLength(User.PreferredLocaleMaxLength);
 
             builder.HasIndex(x => x.Email).IsUnique();
             builder.HasIndex(x => x.Username).IsUnique();
-            
+            builder.HasIndex(x => x.PhoneNumber).IsUnique();
+
         }
     }
 }

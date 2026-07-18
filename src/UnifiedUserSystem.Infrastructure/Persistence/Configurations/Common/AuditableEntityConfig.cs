@@ -2,29 +2,40 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using UnifiedUserSystem.src.Domain.Common;
 
-namespace UnifiedUserSystem.src.Infrastructure.Persistence.Configurations
+namespace UnifiedUserSystem.src.Infrastructure.Persistence.Configurations;
+
+public abstract class AuditableEntityConfig<TEntity, TKey> : IEntityTypeConfiguration<TEntity>
+    where TEntity : AuditableEntity<TKey>
+    where TKey : struct
 {
-    public abstract class AuditableEntityConfig<TEntity, TKey> : IEntityTypeConfiguration<TEntity>
-        where TEntity : AuditableEntity<TKey>
-        where TKey : struct
+    public virtual void Configure(EntityTypeBuilder<TEntity> builder)
     {
-        public virtual void Configure(EntityTypeBuilder<TEntity> builder)
-        {
-            builder.Property(x => x.CreatedAt)
-                .HasColumnName("created_at")
-                .IsRequired();
+        builder.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
 
-            builder.Property(x => x.UpdatedAt)
-                .HasColumnName("updated_at")
-                .IsRequired();
+        builder.Property(x => x.UpdatedAt)
+            .HasColumnName("updated_at")
+            .IsRequired();
 
-            builder.Property(x => x.CreatedByUserId)
-                .HasColumnName("created_by_user_id")
-                .IsRequired(false);
+        builder.Property(x => x.CreatedByUserId)
+            .HasColumnName("created_by_user_id")
+            .IsRequired(false);
 
-            builder.Property(x => x.UpdatedByUserId)
-                .HasColumnName("updated_by_user_id")
-                .IsRequired(false);
-        }
+        builder.Property(x => x.UpdatedByUserId)
+            .HasColumnName("updated_by_user_id")
+            .IsRequired(false);
+
+        builder.Property(x => x.IsDeleted)
+            .HasColumnName("is_deleted")
+            .IsRequired();
+
+        builder.Property(x => x.DeletedAt)
+            .HasColumnName("deleted_at")
+            .IsRequired(false);
+
+        builder.Property(x => x.DeletedByUserId)
+            .HasColumnName("deleted_by_user_id")
+            .IsRequired(false);
     }
 }

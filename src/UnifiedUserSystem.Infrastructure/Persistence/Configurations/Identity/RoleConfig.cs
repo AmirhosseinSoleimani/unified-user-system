@@ -12,7 +12,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
         {
             base.Configure(builder);
 
-            builder.ToTable("roles", "public");
+            builder.ToTable("roles", "identity");
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.Id)

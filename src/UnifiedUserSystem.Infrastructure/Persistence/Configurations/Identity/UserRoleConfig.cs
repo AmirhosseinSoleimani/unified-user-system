@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using UnifiedUserSystem.src.Domain.Common;
 using UnifiedUserSystem.src.Domain.Identity.Entities;
 using UnifiedUserSystem.src.Infrastructure.Persistence.Configurations;
 
@@ -11,7 +12,7 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
         {
             base.Configure(builder);
 
-            builder.ToTable("user_roles", "public");
+            builder.ToTable("user_roles", "identity");
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.Id)
@@ -25,6 +26,15 @@ namespace UnifiedUserSystem.src.UnifiedUserSystem.Infrastructure.Persistence.Con
             builder.Property(x => x.RoleId)
                 .HasColumnName("role_id")
                 .IsRequired();
+
+            builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+            builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+            builder.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id");
+            builder.Property(x => x.UpdatedByUserId).HasColumnName("updated_by_user_id");
+
+            builder.Property(x => x.IsDeleted).HasColumnName("is_deleted");
+            builder.Property(x => x.DeletedAt).HasColumnName("deleted_at");
+            builder.Property(x => x.DeletedByUserId).HasColumnName("deleted_by_user_id");
 
             builder.HasOne(x => x.User)
                 .WithMany(u => u.UserRoles)
