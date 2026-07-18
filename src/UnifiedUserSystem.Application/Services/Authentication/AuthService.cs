@@ -91,9 +91,8 @@ public class AuthService : IAuthService
         if (await _uow.Users.PhoneNumberExistsAsync(phoneNumber))
             throw BusinessConflictException.For(DomainErrorCodes.PhoneNumberAlreadyExists);
 
-        var defaultRoleId = (int)AppRole.User;
         var defaultRoleKey = Role.NormalizeKey(nameof(AppRole.User));
-        var role = await _uow.Roles.FindByIdAsync(defaultRoleId, ct)
+        var role = await _uow.Roles.FindByKeyAsync(defaultRoleKey, ct)
             ?? throw DomainException.For(DomainErrorCodes.DefaultRoleNotFound);
 
         var now = _clock.Utcnow;
